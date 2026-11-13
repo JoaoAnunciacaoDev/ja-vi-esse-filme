@@ -28,7 +28,7 @@ interface MediaDetailsModalProps {
   userStatus?: WatchStatus
   isFavorite?: boolean
   isUpdating?: boolean
-  onUpdateStatus?: (media: MediaItem | ExternalMediaResult, status: WatchStatus) => void
+  onUpdateStatus?: (media: MediaItem | ExternalMediaResult, status: WatchStatus | null) => void
   onToggleFavorite?: (media: MediaItem | ExternalMediaResult) => void
   onLogWatch?: (media: MediaItem | ExternalMediaResult) => void
   onOpenSeriesEvaluation?: (media: MediaItem | ExternalMediaResult) => void
@@ -328,9 +328,11 @@ export function MediaDetailsModal({
                 disabled={isUpdating}
                 value={userStatus || ''}
                 onChange={(e) => {
-                  const newStatus = e.target.value as WatchStatus
-                  if (newStatus) {
-                    onUpdateStatus(media, newStatus)
+                  const val = e.target.value
+                  if (val === 'none') {
+                    onUpdateStatus(media, null)
+                  } else if (val) {
+                    onUpdateStatus(media, val as WatchStatus)
                   }
                 }}
                 className={`w-full appearance-none py-2.5 pl-3 pr-8 rounded-xl text-xs font-semibold border transition cursor-pointer ${
@@ -342,7 +344,7 @@ export function MediaDetailsModal({
                 }`}
               >
                 <option value="" disabled className="bg-slate-900 text-slate-400">
-                  Definir status na videoteca
+                  {userStatus ? 'Alterar status' : 'Definir status na videoteca'}
                 </option>
                 <option value="watching" className="bg-slate-900 text-cyan-400">
                   Assistindo
@@ -359,6 +361,11 @@ export function MediaDetailsModal({
                 <option value="dropped" className="bg-slate-900 text-slate-400">
                   Abandonado
                 </option>
+                {userStatus && (
+                  <option value="none" className="bg-slate-900 text-rose-400 font-bold">
+                    ✕ Remover status (Desmarcar)
+                  </option>
+                )}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-400">
                 {isUpdating ? (

@@ -102,7 +102,7 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       status,
     }: {
       item: MediaItem | ExternalMediaResult
-      status: WatchStatus
+      status: WatchStatus | null
     }) => {
       // 1. Verifica se já temos esse item na watchlist do usuário (prioriza tmdb_id para não colidir títulos iguais)
       const existingInWatchlist = watchlistData?.items?.find((i) => {
@@ -114,6 +114,14 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
         }
         return false
       })
+
+      // Se for remoção de status (status === null)
+      if (!status) {
+        if (existingInWatchlist) {
+          return watchlistApi.delete(existingInWatchlist.id)
+        }
+        return Promise.resolve({ message: 'Item não estava na lista' })
+      }
 
       if (existingInWatchlist) {
         return watchlistApi.update(existingInWatchlist.id, { status })
@@ -150,14 +158,18 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['watchlist'] })
-      const statusLabels: Record<WatchStatus, string> = {
-        plan_to_watch: 'Quero Ver',
-        watching: 'Assistindo',
-        completed: 'Já Vi (Concluído)',
-        paused: 'Pausado',
-        dropped: 'Abandonado',
+      if (!variables.status) {
+        setToastMsg(`Status de "${variables.item.title}" removido com sucesso!`)
+      } else {
+        const statusLabels: Record<WatchStatus, string> = {
+          plan_to_watch: 'Quero Ver',
+          watching: 'Assistindo',
+          completed: 'Já Vi (Concluído)',
+          paused: 'Pausado',
+          dropped: 'Abandonado',
+        }
+        setToastMsg(`Status alterado para "${statusLabels[variables.status]}"!`)
       }
-      setToastMsg(`Status alterado para "${statusLabels[variables.status]}"!`)
       setTimeout(() => setToastMsg(null), 3000)
     },
     onError: (err: any) => {

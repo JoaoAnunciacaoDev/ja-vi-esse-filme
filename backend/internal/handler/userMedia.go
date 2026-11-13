@@ -22,6 +22,7 @@ func ListUserMediaHandler(c *gin.Context) {
 
 	status := c.Query("status")
 	favoritesOnly := c.Query("favorite") == "true"
+	platform := c.Query("platform")
 
 	query := db.Where("user_id = ?", userStr)
 	if status != "" {
@@ -30,11 +31,29 @@ func ListUserMediaHandler(c *gin.Context) {
 	if favoritesOnly {
 		query = query.Where("favorite = ?", true)
 	}
+	if platform != "" {
+		query = query.Where("platform = ?", platform)
+	}
 
 	var list []schemas.UserMedia
 	if err := query.Preload("Media").Order("updated_at DESC").Find(&list).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao listar sua videoteca"})
 		return
+	}
+
+	// Enriquece mídias sem plataforma definida buscando o registro mais recente no diário
+	for i := range list {
+		if list[i].Platform == "" {
+			var logPlatform string
+			if err := db.Model(&schemas.WatchLog{}).
+				Where("user_id = ? AND media_id = ? AND platform != ''", userStr, list[i].MediaID).
+				Order("watched_at DESC, created_at DESC").
+				Select("platform").
+				Limit(1).
+				Scan(&logPlatform).Error; err == nil && logPlatform != "" {
+				list[i].Platform = logPlatform
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"items": list})
@@ -71,6 +90,9 @@ func AddToUserMediaHandler(c *gin.Context) {
 		if input.Favorite != nil {
 			existing.Favorite = *input.Favorite
 		}
+		if input.Platform != nil {
+			existing.Platform = *input.Platform
+		}
 		existing.InCollection = true
 		existing.UpdatedAt = time.Now()
 		db.Save(&existing)
@@ -104,6 +126,9 @@ func AddToUserMediaHandler(c *gin.Context) {
 	}
 	if input.CurrentEpisode != nil {
 		item.CurrentEpisode = *input.CurrentEpisode
+	}
+	if input.Platform != nil {
+		item.Platform = *input.Platform
 	}
 	if status == schemas.StatusWatching {
 		item.StartedAt = &now
@@ -186,6 +211,9 @@ func UpdateUserMediaHandler(c *gin.Context) {
 	}
 	if input.CurrentEpisode != nil {
 		item.CurrentEpisode = *input.CurrentEpisode
+	}
+	if input.Platform != nil {
+		item.Platform = *input.Platform
 	}
 	item.UpdatedAt = now
 

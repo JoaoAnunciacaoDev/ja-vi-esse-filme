@@ -61,6 +61,9 @@ func CreateWatchLogHandler(c *gin.Context) {
 				userMedia.CurrentEpisode = input.EpisodeNumber
 			}
 		}
+		if input.Platform != "" {
+			userMedia.Platform = input.Platform
+		}
 		userMedia.UpdatedAt = now
 		db.Save(&userMedia)
 	} else {
@@ -71,6 +74,7 @@ func CreateWatchLogHandler(c *gin.Context) {
 			MediaID:        input.MediaID,
 			Status:         schemas.StatusCompleted,
 			InCollection:   true,
+			Platform:       input.Platform,
 			CurrentSeason:  input.SeasonNumber,
 			CurrentEpisode: input.EpisodeNumber,
 			FinishedAt:     &now,

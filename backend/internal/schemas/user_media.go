@@ -20,6 +20,7 @@ type UserMedia struct {
 	Status         WatchStatus `json:"status" gorm:"not null;default:'plan_to_watch';index"`
 	Favorite       bool        `json:"favorite" gorm:"default:false"`
 	InCollection   bool        `json:"in_collection" gorm:"default:true"`
+	Platform       string      `json:"platform,omitempty" gorm:"default:''"`
 	CurrentSeason  int         `json:"current_season" gorm:"default:0"`
 	CurrentEpisode int         `json:"current_episode" gorm:"default:0"`
 	StartedAt      *time.Time  `json:"started_at,omitempty"`
@@ -37,6 +38,7 @@ type AddToUserMediaInput struct {
 	Status         WatchStatus `json:"status" binding:"omitempty,oneof=plan_to_watch watching completed paused dropped"`
 	Favorite       *bool       `json:"favorite,omitempty"`
 	InCollection   *bool       `json:"in_collection,omitempty"`
+	Platform       *string     `json:"platform,omitempty"`
 	CurrentSeason  *int        `json:"current_season,omitempty"`
 	CurrentEpisode *int        `json:"current_episode,omitempty"`
 }
@@ -45,6 +47,7 @@ type UpdateUserMediaInput struct {
 	Status         *WatchStatus `json:"status,omitempty" binding:"omitempty,oneof=plan_to_watch watching completed paused dropped"`
 	Favorite       *bool        `json:"favorite,omitempty"`
 	InCollection   *bool        `json:"in_collection,omitempty"`
+	Platform       *string      `json:"platform,omitempty"`
 	CurrentSeason  *int         `json:"current_season,omitempty"`
 	CurrentEpisode *int         `json:"current_episode,omitempty"`
 }

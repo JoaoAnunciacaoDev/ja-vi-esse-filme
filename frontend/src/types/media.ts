@@ -46,6 +46,7 @@ export interface UserMedia {
   status: WatchStatus
   favorite: boolean
   in_collection: boolean
+  platform?: string
   current_season: number
   current_episode: number
   started_at?: string

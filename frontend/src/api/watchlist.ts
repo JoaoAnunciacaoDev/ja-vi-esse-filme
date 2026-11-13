@@ -4,6 +4,7 @@ import type { UserMedia, WatchStatus } from '@/types/media'
 export interface ListWatchlistParams {
   status?: WatchStatus
   favorite?: boolean
+  platform?: string
 }
 
 export interface AddToWatchlistInput {
@@ -11,6 +12,7 @@ export interface AddToWatchlistInput {
   status?: WatchStatus
   favorite?: boolean
   in_collection?: boolean
+  platform?: string
   current_season?: number
   current_episode?: number
 }
@@ -19,6 +21,7 @@ export interface UpdateWatchlistInput {
   status?: WatchStatus
   favorite?: boolean
   in_collection?: boolean
+  platform?: string
   current_season?: number
   current_episode?: number
 }
@@ -28,6 +31,7 @@ export const watchlistApi = {
     const sp = new URLSearchParams()
     if (params?.status) sp.append('status', params.status)
     if (params?.favorite !== undefined) sp.append('favorite', String(params.favorite))
+    if (params?.platform) sp.append('platform', params.platform)
     const qs = sp.toString()
     return apiClient.get<{ items: UserMedia[] }>(`/api/watchlist${qs ? `?${qs}` : ''}`)
   },
