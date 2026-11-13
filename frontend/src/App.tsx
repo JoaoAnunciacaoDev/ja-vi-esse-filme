@@ -10,7 +10,7 @@ import { LogMediaModal } from '@/features/diary/LogMediaModal'
 import { Footer } from '@/components/layout/Footer'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { NotFoundPage } from '@/components/NotFoundPage'
-import type { MediaItem, ExternalMediaResult } from '@/types/media'
+import type { MediaItem, ExternalMediaResult, WatchLog } from '@/types/media'
 import {
   buildTabUrl,
   resolveAppRoute,
@@ -71,9 +71,11 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
   // Estado do Modal de Registrar Sessão / Experiência
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
   const [selectedMediaForLog, setSelectedMediaForLog] = useState<MediaItem | ExternalMediaResult | undefined>()
+  const [selectedLogForEdit, setSelectedLogForEdit] = useState<WatchLog | undefined>()
 
-  const handleOpenLogModal = (media?: MediaItem | ExternalMediaResult) => {
+  const handleOpenLogModal = (media?: MediaItem | ExternalMediaResult, log?: WatchLog) => {
     setSelectedMediaForLog(media)
+    setSelectedLogForEdit(log)
     setIsLogModalOpen(true)
   }
 
@@ -358,8 +360,10 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           onClose={() => {
             setIsLogModalOpen(false)
             setSelectedMediaForLog(undefined)
+            setSelectedLogForEdit(undefined)
           }}
           initialMedia={selectedMediaForLog}
+          initialLog={selectedLogForEdit}
         />
 
         {isPrivacyModalOpen && (

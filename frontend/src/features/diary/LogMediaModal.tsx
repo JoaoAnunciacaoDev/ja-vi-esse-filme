@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchLogsApi } from '@/api/watchLogs'
 import { mediaApi } from '@/api/media'
-import type { MediaItem, ExternalMediaResult } from '@/types/media'
+import { RatingStarsInput } from '@/components/ui/RatingStarsInput'
+import { formatDateDDMMYYYY, extractDateOnly, getLocalTodayDateString } from '@/utils/date'
+import type { MediaItem, ExternalMediaResult, WatchLog } from '@/types/media'
 import { triggerConfetti } from '@/components/ui/confetti'
 import {
   X,
-  Star,
   Calendar,
   Film,
   Tv,
@@ -15,12 +16,16 @@ import {
   AlertCircle,
   HelpCircle,
   Search,
+  CheckCircle2,
+  RotateCcw,
+  Pencil,
 } from 'lucide-react'
 
 interface LogMediaModalProps {
   isOpen: boolean
   onClose: () => void
   initialMedia?: MediaItem | ExternalMediaResult
+  initialLog?: WatchLog
 }
 
 const PLATFORMS = [
@@ -36,21 +41,25 @@ const PLATFORMS = [
 
 type DateMode = 'exact' | 'year' | 'unknown'
 
-export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalProps) {
+export function LogMediaModal({ isOpen, onClose, initialMedia, initialLog }: LogMediaModalProps) {
   const queryClient = useQueryClient()
 
   const [media, setMedia] = useState<MediaItem | ExternalMediaResult | undefined>(initialMedia)
+  const [existingLogId, setExistingLogId] = useState<string | null>(initialLog?.id || null)
+  const [isExistingLoaded, setIsExistingLoaded] = useState(false)
+  const [isLoadingExisting, setIsLoadingExisting] = useState(false)
+  const [savedLogDate, setSavedLogDate] = useState<string | null>(null)
+
   const [dateMode, setDateMode] = useState<DateMode>('exact')
-  const [watchedDate, setWatchedDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [watchedDate, setWatchedDate] = useState(() => getLocalTodayDateString())
   const [watchedYear, setWatchedYear] = useState(() => new Date().getFullYear().toString())
 
   const [seasonNumber, setSeasonNumber] = useState(0)
   const [episodeNumber, setEpisodeNumber] = useState(0)
   const [episodeTitle, setEpisodeTitle] = useState('')
-  const [platform, setPlatform] = useState('Netflix')
+  const [platform, setPlatform] = useState('Cinema')
   const [isRewatch, setIsRewatch] = useState(false)
-  const [rating, setRating] = useState(4.0)
-  const [hoverRating, setHoverRating] = useState(0)
+  const [rating, setRating] = useState<number | null>(4.0)
   const [review, setReview] = useState('')
   const [containsSpoilers, setContainsSpoilers] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -60,27 +69,166 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
   const [searchResults, setSearchResults] = useState<ExternalMediaResult[]>([])
   const [isSearchingMedia, setIsSearchingMedia] = useState(false)
 
-  // Reseta estado sempre que o modal abre ou initialMedia muda
+  // Identificador da mídia atual para carregar avaliação salva
+  const mediaKey = initialLog?.id
+    ? `log-${initialLog.id}`
+    : media
+    ? ('id' in media && media.id ? `id-${media.id}` : 'tmdb_id' in media && media.tmdb_id ? `tmdb-${media.tmdb_id}` : `title-${media.title}`)
+    : initialMedia
+    ? ('id' in initialMedia && initialMedia.id ? `id-${initialMedia.id}` : 'tmdb_id' in initialMedia && initialMedia.tmdb_id ? `tmdb-${initialMedia.tmdb_id}` : `title-${initialMedia.title}`)
+    : 'empty'
+
+  // Carrega os dados da mídia e, caso já tenha sido avaliada, carrega a avaliação existente
   useEffect(() => {
-    if (isOpen) {
-      setMedia(initialMedia)
+    if (!isOpen) return
+
+    // 1. Se foi passado um log específico para edição direta
+    if (initialLog) {
+      setMedia(initialLog.media)
+      setExistingLogId(initialLog.id)
+      setIsExistingLoaded(true)
+      setSavedLogDate(initialLog.watched_at)
+      const cleanDate = extractDateOnly(initialLog.watched_at) || initialLog.watched_at
+      setWatchedDate(cleanDate || getLocalTodayDateString())
+      if (cleanDate && cleanDate.length >= 4) {
+        setWatchedYear(cleanDate.split('-')[0])
+      }
       setDateMode('exact')
-      setWatchedDate(new Date().toISOString().split('T')[0])
+      setRating(typeof initialLog.rating === 'number' ? initialLog.rating : null)
+      setReview(initialLog.review || '')
+      setPlatform(initialLog.platform || 'Cinema')
+      setIsRewatch(Boolean(initialLog.is_rewatch))
+      setContainsSpoilers(Boolean(initialLog.contains_spoilers))
+      setSeasonNumber(initialLog.season_number || 0)
+      setEpisodeNumber(initialLog.episode_number || 0)
+      setEpisodeTitle(initialLog.episode_title || '')
+      setErrorMsg(null)
+      setIsLoadingExisting(false)
+      return
+    }
+
+    const currentMedia = initialMedia || media
+
+    // 2. Se nenhuma mídia foi selecionada ainda
+    if (!currentMedia) {
+      setMedia(undefined)
+      setExistingLogId(null)
+      setIsExistingLoaded(false)
+      setSavedLogDate(null)
+      setDateMode('exact')
+      setWatchedDate(getLocalTodayDateString())
       setWatchedYear(new Date().getFullYear().toString())
       setSeasonNumber(0)
       setEpisodeNumber(0)
       setEpisodeTitle('')
-      setPlatform('Netflix')
+      setPlatform('Cinema')
       setIsRewatch(false)
       setRating(4.0)
-      setHoverRating(0)
       setReview('')
       setContainsSpoilers(false)
       setErrorMsg(null)
-      setMediaSearchQuery('')
-      setSearchResults([])
+      setIsLoadingExisting(false)
+      return
     }
-  }, [isOpen, initialMedia])
+
+    // 3. Uma mídia foi fornecida: busca no banco se já existe avaliação prévia salva
+    let isCancelled = false
+    setIsLoadingExisting(true)
+
+    const loadExistingEvaluation = async () => {
+      try {
+        let targetMediaId = 'id' in currentMedia && typeof currentMedia.id === 'string' && currentMedia.id.length > 0
+          ? currentMedia.id
+          : ''
+
+        // Se for ExternalMediaResult sem id, importa ou recupera o ID persistido no banco
+        if (!targetMediaId && 'tmdb_id' in currentMedia && typeof currentMedia.tmdb_id === 'number' && currentMedia.tmdb_id > 0) {
+          const importRes = await mediaApi.import({
+            tmdb_id: currentMedia.tmdb_id,
+            type: currentMedia.type,
+            title: currentMedia.title,
+            original_title: currentMedia.original_title,
+            overview: currentMedia.overview,
+            poster_url: currentMedia.poster_url,
+            backdrop_url: currentMedia.backdrop_url,
+            release_date: currentMedia.release_date,
+            year: currentMedia.year,
+            genres: currentMedia.genres,
+          })
+          if (importRes.media?.id) {
+            targetMediaId = importRes.media.id
+            if (!isCancelled) {
+              setMedia(importRes.media)
+            }
+          }
+        } else if (!isCancelled) {
+          setMedia(currentMedia)
+        }
+
+        if (targetMediaId) {
+          const res = await watchLogsApi.list({ media_id: targetMediaId, limit: 1 })
+          if (isCancelled) return
+
+          if (res.items && res.items.length > 0) {
+            const existing = res.items[0]
+            setExistingLogId(existing.id)
+            setIsExistingLoaded(true)
+            setSavedLogDate(existing.watched_at)
+
+            const cleanDate = extractDateOnly(existing.watched_at) || existing.watched_at
+            setWatchedDate(cleanDate || getLocalTodayDateString())
+            if (cleanDate && cleanDate.length >= 4) {
+              setWatchedYear(cleanDate.split('-')[0])
+            }
+            setDateMode('exact')
+            setRating(typeof existing.rating === 'number' ? existing.rating : null)
+            setReview(existing.review || '')
+            setPlatform(existing.platform || 'Cinema')
+            setIsRewatch(Boolean(existing.is_rewatch))
+            setContainsSpoilers(Boolean(existing.contains_spoilers))
+            setSeasonNumber(existing.season_number || 0)
+            setEpisodeNumber(existing.episode_number || 0)
+            setEpisodeTitle(existing.episode_title || '')
+            setErrorMsg(null)
+            setIsLoadingExisting(false)
+            return
+          }
+        }
+
+        // Se não possui avaliação prévia, define valores padrão para nova entrada
+        if (!isCancelled) {
+          setExistingLogId(null)
+          setIsExistingLoaded(false)
+          setSavedLogDate(null)
+          setDateMode('exact')
+          setWatchedDate(getLocalTodayDateString())
+          setWatchedYear(new Date().getFullYear().toString())
+          setSeasonNumber(0)
+          setEpisodeNumber(0)
+          setEpisodeTitle('')
+          setPlatform('Cinema')
+          setIsRewatch(false)
+          setRating(4.0)
+          setReview('')
+          setContainsSpoilers(false)
+          setErrorMsg(null)
+        }
+      } catch (err: any) {
+        console.warn('Erro ao carregar avaliação prévia da mídia:', err)
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingExisting(false)
+        }
+      }
+    }
+
+    loadExistingEvaluation()
+
+    return () => {
+      isCancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mediaKey])
 
   // Busca de mídias quando o usuário digita na busca interna do modal
   useEffect(() => {
@@ -103,12 +251,13 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
     }
   }, [media, mediaSearchQuery])
 
-  const createLogMutation = useMutation({
+  // Salvar (Atualizar existente ou Criar novo registro)
+  const saveLogMutation = useMutation({
     mutationFn: async () => {
       if (!media) throw new Error('Selecione um filme ou série para registrar')
 
       // Garante que a mídia está salva no banco
-      let mediaId = 'id' in media ? media.id : ''
+      let mediaId = 'id' in media && typeof media.id === 'string' && media.id.length > 0 ? media.id : ''
       if (!mediaId && 'tmdb_id' in media) {
         const importRes = await mediaApi.import({
           tmdb_id: media.tmdb_id,
@@ -125,18 +274,35 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
         mediaId = importRes.media.id
       }
 
-      // Calcula o formato da data conforme escolha do usuário
+      // Formato da data conforme o modo escolhido
       let finalWatchedAt = ''
       if (dateMode === 'exact') {
-        finalWatchedAt = watchedDate || new Date().toISOString().split('T')[0]
+        finalWatchedAt = watchedDate || getLocalTodayDateString()
       } else if (dateMode === 'year') {
         const y = parseInt(watchedYear) || new Date().getFullYear()
         finalWatchedAt = `${y}-01-01`
       } else {
-        // 'unknown' -> salva a data atual para ordenação, mas o log fica gravado
-        finalWatchedAt = new Date().toISOString().split('T')[0]
+        finalWatchedAt = getLocalTodayDateString()
       }
 
+      const ratingVal = rating ?? 0
+
+      // Se há um log carregado e o usuário está editando, ATUALIZA para não sobreescrever com novos IDs
+      if (existingLogId) {
+        return watchLogsApi.update(existingLogId, {
+          watched_at: finalWatchedAt,
+          season_number: seasonNumber,
+          episode_number: episodeNumber,
+          episode_title: episodeTitle.trim() || undefined,
+          platform: platform,
+          is_rewatch: isRewatch,
+          rating: ratingVal,
+          review: review.trim(),
+          contains_spoilers: containsSpoilers,
+        })
+      }
+
+      // Caso contrário, cria um novo registro
       return watchLogsApi.create({
         media_id: mediaId,
         watched_at: finalWatchedAt,
@@ -144,9 +310,9 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
         season_number: seasonNumber,
         episode_number: episodeNumber,
         episode_title: episodeTitle.trim() || undefined,
-        platform: dateMode === 'unknown' ? platform : platform,
+        platform: platform,
         is_rewatch: isRewatch,
-        rating,
+        rating: ratingVal,
         review: review.trim() || undefined,
         contains_spoilers: containsSpoilers,
       })
@@ -161,9 +327,18 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
       onClose()
     },
     onError: (err: Error) => {
-      setErrorMsg(err.message || 'Erro ao registrar experiência')
+      setErrorMsg(err.message || 'Erro ao salvar experiência')
     },
   })
+
+  // Alterna para registrar uma nova sessão (Rewatch) em vez de editar a anterior
+  const handleSwitchToNewSession = () => {
+    setExistingLogId(null)
+    setIsExistingLoaded(false)
+    setSavedLogDate(null)
+    setWatchedDate(getLocalTodayDateString())
+    setIsRewatch(true)
+  }
 
   if (!isOpen) return null
 
@@ -183,11 +358,17 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
         {/* Título do Modal */}
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-2xl">
-            <Film className="w-6 h-6" />
+            {existingLogId ? <Pencil className="w-6 h-6" /> : <Film className="w-6 h-6" />}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Já Vi Esse Filme!</h2>
-            <p className="text-xs text-slate-400">Registre sua sessão, avalie e guarde suas impressões.</p>
+            <h2 className="text-lg font-bold text-white tracking-tight">
+              {existingLogId ? 'Editar Avaliação' : 'Já Vi Esse Filme!'}
+            </h2>
+            <p className="text-xs text-slate-400">
+              {existingLogId
+                ? 'Atualize a data, nota e impressões da sua avaliação salva.'
+                : 'Registre sua sessão, avalie e guarde suas impressões no diário.'}
+            </p>
           </div>
         </div>
 
@@ -195,6 +376,35 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
           <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-400 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Banner Informativo: Avaliação Anterior Carregada */}
+        {isLoadingExisting && (
+          <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-2xl flex items-center gap-2.5 text-xs text-slate-400 animate-pulse">
+            <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
+            <span>Verificando se você já avaliou esta obra...</span>
+          </div>
+        )}
+
+        {isExistingLoaded && existingLogId && !isLoadingExisting && (
+          <div className="p-3.5 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+            <div className="flex items-center gap-2 text-xs text-cyan-200 min-w-0">
+              <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>
+                Avaliação anterior salva em{' '}
+                <strong className="text-white font-mono">{formatDateDDMMYYYY(savedLogDate)}</strong> carregada.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSwitchToNewSession}
+              title="Registrar como nova sessão em vez de editar a anterior"
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-400 hover:text-rose-300 transition cursor-pointer self-end sm:self-auto shrink-0 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Registrar nova sessão</span>
+            </button>
           </div>
         )}
 
@@ -223,7 +433,12 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
             {/* Trocar filme */}
             <button
               type="button"
-              onClick={() => setMedia(undefined)}
+              onClick={() => {
+                setMedia(undefined)
+                setExistingLogId(null)
+                setIsExistingLoaded(false)
+                setSavedLogDate(null)
+              }}
               className="text-xs font-semibold text-rose-400 hover:text-rose-300 px-2 py-1 rounded-lg hover:bg-rose-500/10 transition cursor-pointer"
             >
               Trocar
@@ -240,7 +455,7 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
                 type="text"
                 value={mediaSearchQuery}
                 onChange={(e) => setMediaSearchQuery(e.target.value)}
-                placeholder="Digite o nome (ex: Interestelar, Breaking Bad)..."
+                placeholder="Digite o nome (ex: Pânico, Interestelar, Breaking Bad)..."
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition"
               />
               {isSearchingMedia && (
@@ -264,32 +479,32 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
                       }}
                       className="w-full p-2.5 text-left flex items-center gap-3 hover:bg-slate-800/50 transition cursor-pointer"
                     >
-                    {item.poster_url ? (
-                      <img
-                        src={item.poster_url}
-                        alt={item.title}
-                        className="w-8 h-11 object-cover rounded-md shrink-0"
-                      />
-                    ) : (
-                      <div className="w-8 h-11 bg-slate-800 rounded flex items-center justify-center shrink-0 text-slate-500">
-                        <Film className="w-4 h-4" />
+                      {item.poster_url ? (
+                        <img
+                          src={item.poster_url}
+                          alt={item.title}
+                          className="w-8 h-11 object-cover rounded-md shrink-0"
+                        />
+                      ) : (
+                        <div className="w-8 h-11 bg-slate-800 rounded flex items-center justify-center shrink-0 text-slate-500">
+                          <Film className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-white truncate">{item.title}</p>
+                        <span className="text-[10px] text-slate-400">
+                          {item.type === 'tv' ? 'Série' : 'Filme'} {item.year ? `• ${item.year}` : ''}
+                        </span>
                       </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">{item.title}</p>
-                      <span className="text-[10px] text-slate-400">
-                        {item.type === 'tv' ? 'Série' : 'Filme'} {item.year ? `• ${item.year}` : ''}
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
         )}
 
-        {/* Escolha da Data (Data exata, Somente o ano, ou Não lembro/Só marcar que vi) */}
+        {/* Escolha da Data */}
         <div className="space-y-2 p-3.5 bg-slate-950/60 border border-slate-800 rounded-2xl">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
@@ -443,36 +658,15 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
           </div>
         </label>
 
-        {/* Avaliação por Estrelas (0.5 a 5.0) */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-300">Sua Nota</label>
-            <span className="text-sm font-extrabold text-amber-400 flex items-center gap-1">
-              <Star className="w-4 h-4 fill-amber-400" />
-              <span>{hoverRating > 0 ? hoverRating.toFixed(1) : rating > 0 ? rating.toFixed(1) : 'Sem nota'}</span>
-            </span>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 py-2 bg-slate-950/60 border border-slate-800 rounded-2xl">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onMouseEnter={() => setHoverRating(star)}
-                onMouseLeave={() => setHoverRating(0)}
-                onClick={() => setRating(star)}
-                className="p-1.5 transition-transform hover:scale-125 cursor-pointer"
-              >
-                <Star
-                  className={`w-7 h-7 transition-colors ${
-                    (hoverRating || rating) >= star
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-slate-700'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
+        {/* Avaliação por Estrelas (0 a 5 com passos de 0,5) */}
+        <div className="p-3.5 bg-slate-950/60 border border-slate-800 rounded-2xl">
+          <RatingStarsInput
+            label="Sua Nota (Escala de 0 a 5 com passos de 0,5)"
+            value={rating}
+            onChange={(val) => setRating(val)}
+            size="md"
+            showQuickPills
+          />
         </div>
 
         {/* Resenha / Texto */}
@@ -502,19 +696,19 @@ export function LogMediaModal({ isOpen, onClose, initialMedia }: LogMediaModalPr
 
         {/* Botão de Envio */}
         <button
-          onClick={() => createLogMutation.mutate()}
-          disabled={!media || createLogMutation.isPending}
+          onClick={() => saveLogMutation.mutate()}
+          disabled={!media || saveLogMutation.isPending || isLoadingExisting}
           className="w-full py-3.5 rounded-2xl font-bold text-sm bg-rose-500 text-white hover:bg-rose-400 active:scale-98 transition disabled:opacity-50 cursor-pointer shadow-xl shadow-rose-500/25 flex items-center justify-center gap-2"
         >
-          {createLogMutation.isPending ? (
+          {saveLogMutation.isPending ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Salvando sessão...</span>
+              <span>{existingLogId ? 'Atualizando avaliação...' : 'Salvando sessão...'}</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
-              <span>Salvar no meu Diário</span>
+              {existingLogId ? <Pencil className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+              <span>{existingLogId ? 'Atualizar Avaliação' : 'Salvar no meu Diário'}</span>
             </>
           )}
         </button>

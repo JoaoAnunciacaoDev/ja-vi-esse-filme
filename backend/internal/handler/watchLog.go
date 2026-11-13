@@ -294,6 +294,31 @@ func UpdateWatchLogHandler(c *gin.Context) {
 	}
 
 	db.Preload("Media").First(&item, "id = ?", item.ID)
+
+	// Atualiza metadados da atividade social correspondente se existir
+	var act schemas.Activity
+	if err := db.Where("watch_log_id = ?", item.ID).First(&act).Error; err == nil {
+		mediaTitle := ""
+		posterURL := ""
+		if item.Media != nil {
+			mediaTitle = item.Media.Title
+			posterURL = item.Media.PosterURL
+		}
+		meta, _ := json.Marshal(gin.H{
+			"media_title":    mediaTitle,
+			"poster_url":     posterURL,
+			"media_type":     item.MediaType,
+			"season_number":  item.SeasonNumber,
+			"episode_number": item.EpisodeNumber,
+			"platform":       item.Platform,
+			"is_rewatch":     item.IsRewatch,
+			"rating":         item.Rating,
+			"review":         item.Review,
+		})
+		act.Metadata = string(meta)
+		_ = db.Save(&act).Error
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Registro atualizado com sucesso",
 		"log":     item,

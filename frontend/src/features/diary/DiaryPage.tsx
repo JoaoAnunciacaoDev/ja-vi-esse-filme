@@ -4,10 +4,10 @@ import { watchLogsApi } from '@/api/watchLogs'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { formatDateDDMMYYYY } from '@/utils/date'
 import type { WatchLog, MediaItem } from '@/types/media'
-import { Film, Tv, Star, Calendar, Plus, Trash2, Repeat, Loader2, Sparkles, AlertTriangle } from 'lucide-react'
+import { Film, Tv, Star, Calendar, Plus, Trash2, Repeat, Loader2, Sparkles, AlertTriangle, Pencil } from 'lucide-react'
 
 interface DiaryPageProps {
-  onOpenLogModal: (media?: MediaItem) => void
+  onOpenLogModal: (media?: MediaItem, log?: WatchLog) => void
   onNavigateToCatalog: () => void
 }
 
@@ -232,6 +232,13 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
 
                   {/* Ações */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/60">
+                    <button
+                      onClick={() => onOpenLogModal(log.media, log)}
+                      title="Editar avaliação"
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => setLogToDelete(log.id)}
                       title="Excluir do diário"
