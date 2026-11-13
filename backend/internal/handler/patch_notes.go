@@ -158,7 +158,7 @@ func AdminCreatePatchNoteHandler(c *gin.Context) {
 
 	// Se já for criada publicada, injeta anúncio no Feed Social
 	if note.IsPublished {
-		_ = RecordActivity(db, user.ID, "PATCH_NOTE_PUBLISHED", nil, map[string]interface{}{
+		_ = RecordActivity(db, user.ID, "PATCH_NOTE_PUBLISHED", nil, nil, map[string]interface{}{
 			"version": note.Version,
 			"title":   note.Title,
 			"summary": note.Summary,
@@ -218,7 +218,7 @@ func AdminUpdatePatchNoteHandler(c *gin.Context) {
 
 	// Se acabou de ser publicada, publica no feed da comunidade
 	if note.IsPublished && !wasPublished {
-		_ = RecordActivity(db, user.ID, "PATCH_NOTE_PUBLISHED", nil, map[string]interface{}{
+		_ = RecordActivity(db, user.ID, "PATCH_NOTE_PUBLISHED", nil, nil, map[string]interface{}{
 			"version": note.Version,
 			"title":   note.Title,
 			"summary": note.Summary,

@@ -9,17 +9,17 @@ import (
 )
 
 type Config struct {
-	Port              string
-	Env               string
-	DBDriver          string
-	DBSource          string
-	SessionSecret     string
-	FrontendURL       string
-	GoogleBooksAPIKey string
-	VapidPublicKey    string
-	VapidPrivateKey   string
-	VapidSubject      string
-	CronSecret        string
+	Port            string
+	Env             string
+	DBDriver        string
+	DBSource        string
+	SessionSecret   string
+	FrontendURL     string
+	TmdbAPIKey      string
+	VapidPublicKey  string
+	VapidPrivateKey string
+	VapidSubject    string
+	CronSecret      string
 }
 
 // Load lê o arquivo .env e retorna um ponteiro para a struct Config preenchida com as variáveis de ambiente.
@@ -47,18 +47,18 @@ func Load() *Config {
 		Env:               getEnv("ENV", "development"),
 		DBDriver:          rawDriver,
 		DBSource:          getEnv("DB_SOURCE", "javiessefilme.db"),
-		SessionSecret:     getEnv("SESSION_SECRET", "javiessefilme-secret-key-12345"),
-		FrontendURL:       getEnv("FRONTEND_URL", "http://localhost:5173"),
-		GoogleBooksAPIKey: getEnv("GOOGLE_BOOKS_API_KEY", ""),
-		VapidPublicKey:    getEnv("VAPID_PUBLIC_KEY", ""),
-		VapidPrivateKey:   getEnv("VAPID_PRIVATE_KEY", ""),
-		VapidSubject:      getEnv("VAPID_SUBJECT", "mailto:suporte@javiessefilme.app"),
-		CronSecret:        getEnv("CRON_SECRET", ""),
+		SessionSecret:   getEnv("SESSION_SECRET", "javiessefilme-secret-key-12345"),
+		FrontendURL:     getEnv("FRONTEND_URL", "http://localhost:5173"),
+		TmdbAPIKey:      getEnv("TMDB_API_KEY", ""),
+		VapidPublicKey:  getEnv("VAPID_PUBLIC_KEY", ""),
+		VapidPrivateKey: getEnv("VAPID_PRIVATE_KEY", ""),
+		VapidSubject:    getEnv("VAPID_SUBJECT", "mailto:suporte@javiessefilme.app"),
+		CronSecret:      getEnv("CRON_SECRET", ""),
 	}
 
 	// Validação estrita para ambiente de produção
 	if cfg.Env == "production" {
-		if cfg.SessionSecret == "silverfish-secret-key-12345" || len(cfg.SessionSecret) < 32 {
+		if cfg.SessionSecret == "javiessefilme-secret-key-12345" || len(cfg.SessionSecret) < 32 {
 			log.Fatal("ERRO DE SEGURANÇA: SESSION_SECRET obrigatório com no mínimo 32 caracteres em ambiente de produção!")
 		}
 	}

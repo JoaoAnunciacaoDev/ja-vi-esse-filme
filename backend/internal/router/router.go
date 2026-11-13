@@ -77,5 +77,5 @@ func Initialize(cfg *config.Config, db *gorm.DB) {
 		log.Fatalf("Erro ao forçar encerramento do servidor: %v", err)
 	}
 
-	log.Println("Servidor Silverfish encerrado graciosamente com sucesso!")
+	log.Println("Servidor Já Vi Esse Filme encerrado graciosamente com sucesso!")
 }

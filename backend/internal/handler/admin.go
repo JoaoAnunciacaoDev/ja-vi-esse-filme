@@ -15,85 +15,76 @@ func AdminDashboardStatsHandler(c *gin.Context) {
 	var totalUsers int64
 	_ = db.Model(&schemas.User{}).Count(&totalUsers).Error
 
-	var totalBooks int64
-	_ = db.Model(&schemas.Book{}).Count(&totalBooks).Error
+	var totalMedia int64
+	_ = db.Model(&schemas.MediaItem{}).Count(&totalMedia).Error
 
-	var totalSessions int64
-	_ = db.Model(&schemas.ReadingSession{}).Count(&totalSessions).Error
+	var totalMovies int64
+	_ = db.Model(&schemas.MediaItem{}).Where("type = 'movie'").Count(&totalMovies).Error
 
-	var totalPagesRead int64
-	_ = db.Model(&schemas.ReadingSession{}).Select("COALESCE(SUM(pages_read), 0)").Scan(&totalPagesRead).Error
+	var totalSeries int64
+	_ = db.Model(&schemas.MediaItem{}).Where("type = 'tv'").Count(&totalSeries).Error
+
+	var totalWatchLogs int64
+	_ = db.Model(&schemas.WatchLog{}).Count(&totalWatchLogs).Error
 
 	var totalReviews int64
-	_ = db.Model(&schemas.BookReview{}).Count(&totalReviews).Error
+	_ = db.Model(&schemas.WatchLog{}).Where("rating > 0 OR review != ''").Count(&totalReviews).Error
 
 	// Novos usuários nos últimos 30 dias
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
 	var newUsersLast30Days int64
 	_ = db.Model(&schemas.User{}).Where("created_at >= ?", thirtyDaysAgo).Count(&newUsersLast30Days).Error
 
-	// Usuários ativos no mês atual (com sessões de leitura registradas)
+	// Usuários ativos no mês atual (com sessões assistidas)
 	currentMonth := time.Now().Format("2006-01")
-	monthStart, monthEnd, ok := getMonthDateBounds(currentMonth)
-	if !ok {
-		monthStart = currentMonth + "-01"
-		monthEnd = time.Now().Format("2006-01-02")
-	}
 	var activeUsersThisMonth int64
-	_ = db.Model(&schemas.ReadingSession{}).
-		Where("read_at >= ? AND read_at <= ?", monthStart, monthEnd).
+	_ = db.Model(&schemas.WatchLog{}).
+		Where("watched_at >= ? AND watched_at <= ?", currentMonth+"-01", currentMonth+"-31").
 		Distinct("user_id").
 		Count(&activeUsersThisMonth).Error
 
-	// Leitores com maiores recordes de ofensiva
-	var topUsers []schemas.User
-	_ = db.Order("created_at ASC").Limit(5).Find(&topUsers).Error
-
-	type StreakerSummary struct {
+	// Usuários mais ativos (Top Cinéfilos)
+	type CinephileSummary struct {
 		ID          string `json:"id"`
 		Username    string `json:"username"`
 		DisplayName string `json:"display_name"`
-		Streak      int    `json:"streak"`
+		TotalLogs   int64  `json:"total_logs"`
 	}
 
-	streakers := make([]StreakerSummary, 0, len(topUsers))
-	for _, u := range topUsers {
-		var history []schemas.GoalHistory
-		_ = db.Where("user_id = ?", u.ID).Order("date DESC").Find(&history).Error
-		today := getTodayInTimezone(u.Timezone)
-		cur, _ := calculateStreaks(history, today)
-		streakers = append(streakers, StreakerSummary{
-			ID:          u.ID,
-			Username:    u.Username,
-			DisplayName: u.DisplayName,
-			Streak:      cur,
-		})
-	}
+	var topCinephiles []CinephileSummary
+	_ = db.Table("users").
+		Select("users.id, users.username, users.display_name, COUNT(watch_logs.id) as total_logs").
+		Joins("LEFT JOIN watch_logs ON watch_logs.user_id = users.id").
+		Group("users.id, users.username, users.display_name").
+		Order("total_logs DESC").
+		Limit(5).
+		Scan(&topCinephiles).Error
 
 	c.JSON(http.StatusOK, gin.H{
 		"overview": gin.H{
-			"total_users":              totalUsers,
-			"new_users_last_30_days":   newUsersLast30Days,
-			"active_users_this_month":  activeUsersThisMonth,
-			"total_books":              totalBooks,
-			"total_sessions":           totalSessions,
-			"total_pages_read":         totalPagesRead,
-			"total_reviews":            totalReviews,
+			"total_users":             totalUsers,
+			"new_users_last_30_days":  newUsersLast30Days,
+			"active_users_this_month": activeUsersThisMonth,
+			"total_media":             totalMedia,
+			"total_movies":            totalMovies,
+			"total_series":            totalSeries,
+			"total_watch_logs":        totalWatchLogs,
+			"total_reviews":           totalReviews,
 		},
-		"top_streakers": streakers,
+		"top_cinephiles": topCinephiles,
 	})
 }
 
 type AdminUserView struct {
-	ID             string    `json:"id"`
-	Email          string    `json:"email"`
-	Username       string    `json:"username"`
-	DisplayName    string    `json:"display_name"`
-	Role           string    `json:"role"`
-	IsPrivate      bool      `json:"is_private"`
-	TotalPagesRead int64     `json:"total_pages_read"`
-	TotalBooksRead int64     `json:"total_books_read"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID          string    `json:"id"`
+	Email       string    `json:"email"`
+	Username    string    `json:"username"`
+	DisplayName string    `json:"display_name"`
+	Role        string    `json:"role"`
+	IsPrivate   bool      `json:"is_private"`
+	TotalLogs   int64     `json:"total_logs"`
+	TotalMedia  int64     `json:"total_media"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // AdminListUsersHandler lista todos os usuários da plataforma com paginação e filtros
@@ -144,39 +135,39 @@ func AdminListUsersHandler(c *gin.Context) {
 			Total  int64  `gorm:"column:total"`
 		}
 
-		var pagesSum []UserTotal
-		_ = db.Model(&schemas.ReadingSession{}).
-			Select("user_id, COALESCE(SUM(pages_read), 0) as total").
+		var logsCount []UserTotal
+		_ = db.Model(&schemas.WatchLog{}).
+			Select("user_id, COUNT(*) as total").
 			Where("user_id IN (?)", userIDs).
 			Group("user_id").
-			Scan(&pagesSum).Error
-		pagesMap := make(map[string]int64, len(pagesSum))
-		for _, ps := range pagesSum {
-			pagesMap[ps.UserID] = ps.Total
+			Scan(&logsCount).Error
+		logsMap := make(map[string]int64, len(logsCount))
+		for _, lc := range logsCount {
+			logsMap[lc.UserID] = lc.Total
 		}
 
-		var booksCount []UserTotal
-		_ = db.Model(&schemas.UserBook{}).
+		var mediaCount []UserTotal
+		_ = db.Model(&schemas.UserMedia{}).
 			Select("user_id, COUNT(*) as total").
-			Where("user_id IN (?) AND status = ?", userIDs, schemas.StatusRead).
+			Where("user_id IN (?)", userIDs).
 			Group("user_id").
-			Scan(&booksCount).Error
-		booksMap := make(map[string]int64, len(booksCount))
-		for _, bc := range booksCount {
-			booksMap[bc.UserID] = bc.Total
+			Scan(&mediaCount).Error
+		mediaMap := make(map[string]int64, len(mediaCount))
+		for _, mc := range mediaCount {
+			mediaMap[mc.UserID] = mc.Total
 		}
 
 		for _, u := range users {
 			userViews = append(userViews, AdminUserView{
-				ID:             u.ID,
-				Email:          u.Email,
-				Username:       u.Username,
-				DisplayName:    u.DisplayName,
-				Role:           u.Role,
-				IsPrivate:      u.IsPrivate,
-				TotalPagesRead: pagesMap[u.ID],
-				TotalBooksRead: booksMap[u.ID],
-				CreatedAt:      u.CreatedAt,
+				ID:          u.ID,
+				Email:       u.Email,
+				Username:    u.Username,
+				DisplayName: u.DisplayName,
+				Role:        u.Role,
+				IsPrivate:   u.IsPrivate,
+				TotalLogs:   logsMap[u.ID],
+				TotalMedia:  mediaMap[u.ID],
+				CreatedAt:   u.CreatedAt,
 			})
 		}
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 // RecordActivity cria um evento de atividade no feed social
-func RecordActivity(txOrDb *gorm.DB, userID string, activityType string, bookID *string, metadata map[string]interface{}) error {
+func RecordActivity(txOrDb *gorm.DB, userID string, activityType string, mediaID *string, watchLogID *string, metadata map[string]interface{}) error {
 	var metaStr string
 	if metadata != nil {
 		bytes, err := json.Marshal(metadata)
@@ -25,12 +25,13 @@ func RecordActivity(txOrDb *gorm.DB, userID string, activityType string, bookID 
 	}
 
 	activity := schemas.Activity{
-		ID:        uuid.NewString(),
-		UserID:    userID,
-		Type:      activityType,
-		BookID:    bookID,
-		Metadata:  metaStr,
-		CreatedAt: time.Now(),
+		ID:         uuid.NewString(),
+		UserID:     userID,
+		Type:       activityType,
+		MediaID:    mediaID,
+		WatchLogID: watchLogID,
+		Metadata:   metaStr,
+		CreatedAt:  time.Now(),
 	}
 
 	return txOrDb.Create(&activity).Error
@@ -64,7 +65,7 @@ func GetFeedHandler(c *gin.Context) {
 	db.Model(&schemas.Activity{}).Where("user_id IN (?)", targetUserIDs).Count(&total)
 
 	var activities []schemas.Activity
-	if err := db.Preload("User").Preload("Book").
+	if err := db.Preload("User").Preload("Media").Preload("WatchLog").
 		Where("user_id IN (?)", targetUserIDs).
 		Order("created_at DESC").
 		Offset(offset).
@@ -423,9 +424,9 @@ func GetLeaderboardHandler(c *gin.Context) {
 	userVal, _ := c.Get("currentUser")
 	user := userVal.(*schemas.User)
 
-	criterion := strings.ToLower(c.DefaultQuery("criterion", "pages"))
-	if criterion != "pages" && criterion != "books" && criterion != "streak" {
-		criterion = "pages"
+	criterion := strings.ToLower(c.DefaultQuery("criterion", "watched"))
+	if criterion != "watched" && criterion != "movies" && criterion != "episodes" && criterion != "reviews" {
+		criterion = "watched"
 	}
 
 	// Período de referência: por padrão anual (com suporte a seleção de ano ou mês)
@@ -435,15 +436,12 @@ func GetLeaderboardHandler(c *gin.Context) {
 
 	isAnnual := false
 	var startPeriod, endPeriod string
-	var startPages, endPages string
 	var periodLabelYear string
 
 	if year != "" {
 		isAnnual = true
-		startPeriod = year + "-01-01 00:00:00"
-		endPeriod = year + "-12-31 23:59:59"
-		startPages = year + "-01-01"
-		endPages = year + "-12-31"
+		startPeriod = year + "-01-01"
+		endPeriod = year + "-12-31"
 		periodLabelYear = year
 	} else if month != "" {
 		mStart, mEnd, ok := getMonthDateBounds(month)
@@ -451,18 +449,14 @@ func GetLeaderboardHandler(c *gin.Context) {
 			sendError(c, http.StatusBadRequest, "formato de mes invalido (use YYYY-MM)")
 			return
 		}
-		startPeriod = mStart + " 00:00:00"
-		endPeriod = mEnd + " 23:59:59"
-		startPages = mStart
-		endPages = mEnd
+		startPeriod = mStart
+		endPeriod = mEnd
 	} else {
 		// Padrão: ano corrente
 		isAnnual = true
 		year = nowStr[:4]
-		startPeriod = year + "-01-01 00:00:00"
-		endPeriod = year + "-12-31 23:59:59"
-		startPages = year + "-01-01"
-		endPages = year + "-12-31"
+		startPeriod = year + "-01-01"
+		endPeriod = year + "-12-31"
 		periodLabelYear = year
 	}
 
@@ -487,62 +481,55 @@ func GetLeaderboardHandler(c *gin.Context) {
 		Total  int64  `gorm:"column:total"`
 	}
 
-	bookCountsMap := make(map[string]int)
-	pageSumsMap := make(map[string]int)
-	historiesByUser := make(map[string][]schemas.GoalHistory)
+	scoreMap := make(map[string]int)
+
+	logQuery := db.Model(&schemas.WatchLog{}).
+		Select("user_id, COUNT(*) as total").
+		Where("user_id IN (?) AND watched_at >= ? AND watched_at <= ?", participantIDs, startPeriod, endPeriod)
 
 	switch criterion {
-	case "books":
-		var bookCounts []ParticipantScore
-		_ = db.Model(&schemas.UserBook{}).
-			Select("user_id, COUNT(*) as total").
-			Where("user_id IN (?) AND status = ? AND finished_at BETWEEN ? AND ?", participantIDs, schemas.StatusRead, startPeriod, endPeriod).
-			Group("user_id").
-			Scan(&bookCounts).Error
-		for _, bc := range bookCounts {
-			bookCountsMap[bc.UserID] = int(bc.Total)
-		}
-	case "streak":
-		var allHistories []schemas.GoalHistory
-		_ = db.Where("user_id IN (?)", participantIDs).Order("date DESC").Find(&allHistories).Error
-		for _, gh := range allHistories {
-			historiesByUser[gh.UserID] = append(historiesByUser[gh.UserID], gh)
-		}
-	default: // "pages"
-		var pageSums []ParticipantScore
-		_ = db.Model(&schemas.ReadingSession{}).
-			Select("user_id, COALESCE(SUM(pages_read), 0) as total").
-			Where("user_id IN (?) AND read_at >= ? AND read_at <= ?", participantIDs, startPages, endPages).
-			Group("user_id").
-			Scan(&pageSums).Error
-		for _, ps := range pageSums {
-			pageSumsMap[ps.UserID] = int(ps.Total)
-		}
+	case "movies":
+		logQuery = logQuery.Where("media_type = 'movie'")
+	case "episodes":
+		logQuery = logQuery.Where("media_type = 'tv'")
+	case "reviews":
+		logQuery = logQuery.Where("rating > 0 OR review != ''")
+	}
+
+	var scores []ParticipantScore
+	_ = logQuery.Group("user_id").Scan(&scores).Error
+	for _, sc := range scores {
+		scoreMap[sc.UserID] = int(sc.Total)
 	}
 
 	for _, p := range participants {
-		score := 0
+		score := scoreMap[p.ID]
 		var label string
 
 		switch criterion {
-		case "books":
-			score = bookCountsMap[p.ID]
+		case "movies":
 			if isAnnual {
-				label = fmt.Sprintf("livros em %s", periodLabelYear)
+				label = fmt.Sprintf("filmes em %s", periodLabelYear)
 			} else {
-				label = "livros no mês"
+				label = "filmes no mês"
 			}
-		case "streak":
-			todayP := getTodayInTimezone(p.Timezone)
-			currentStreak, _ := calculateStreaks(historiesByUser[p.ID], todayP)
-			score = currentStreak
-			label = "dias de ofensiva"
-		default: // "pages"
-			score = pageSumsMap[p.ID]
+		case "episodes":
 			if isAnnual {
-				label = fmt.Sprintf("páginas em %s", periodLabelYear)
+				label = fmt.Sprintf("episódios em %s", periodLabelYear)
 			} else {
-				label = "páginas no mês"
+				label = "episódios no mês"
+			}
+		case "reviews":
+			if isAnnual {
+				label = fmt.Sprintf("avaliações em %s", periodLabelYear)
+			} else {
+				label = "avaliações no mês"
+			}
+		default: // "watched"
+			if isAnnual {
+				label = fmt.Sprintf("títulos assistidos em %s", periodLabelYear)
+			} else {
+				label = "assistidos no mês"
 			}
 		}
 

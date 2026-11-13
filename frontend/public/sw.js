@@ -1,7 +1,7 @@
-// Service Worker do Silverfish — PWA & Web Push
+// Service Worker do Já Vi Esse Filme — PWA & Web Push
 
-const CACHE_NAME = 'silverfish-cache-v2'
-const DEFAULT_NOTIFICATION_URL = '/?tab=library'
+const CACHE_NAME = 'javiessefilme-cache-v1'
+const DEFAULT_NOTIFICATION_URL = '/?tab=watchlist'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -66,8 +66,8 @@ self.addEventListener('fetch', (event) => {
 // Web Push Notifications
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Silverfish 📖',
-    body: 'Hora de ler! Não perca o progresso da sua ofensiva.',
+    title: 'Já Vi Esse Filme 🎬🍿',
+    body: 'Hora do filme ou série! Não deixe de registrar o que assistiu.',
     icon: '/favicon.svg',
     url: DEFAULT_NOTIFICATION_URL,
   }

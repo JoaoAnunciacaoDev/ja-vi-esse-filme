@@ -6,7 +6,6 @@ import {
   Flame,
   Trophy,
   BookOpen,
-  Award,
   Users,
   Lock,
   Calendar,
@@ -24,7 +23,6 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'library' | 'achievements'>('overview')
   const [isFollowLoading, setIsFollowLoading] = useState(false)
 
   useEffect(() => {
@@ -201,153 +199,98 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
               </div>
             ) : (
               <>
-                {/* Métricas do Leitor */}
+                {/* Métricas do Cinéfilo */}
                 {profile.stats && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="bg-slate-800/40 border border-slate-800/80 rounded-2xl p-3.5 text-center">
                       <div className="text-amber-400 flex items-center justify-center gap-1 mb-1">
-                        <Flame className="w-4 h-4 fill-amber-400" />
-                        <span className="text-base font-extrabold">{profile.stats.current_streak}</span>
+                        <Flame className="w-4 h-4 text-amber-400" />
+                        <span className="text-base font-extrabold">{profile.stats.total_movies_watched}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">Ofensiva Atual</span>
+                      <span className="text-[11px] text-slate-400 font-medium">Filmes Vistos</span>
                     </div>
 
                     <div className="bg-slate-800/40 border border-slate-800/80 rounded-2xl p-3.5 text-center">
-                      <div className="text-yellow-400 flex items-center justify-center gap-1 mb-1">
-                        <Trophy className="w-4 h-4" />
-                        <span className="text-base font-extrabold">{profile.stats.best_streak}</span>
+                      <div className="text-cyan-400 flex items-center justify-center gap-1 mb-1">
+                        <Trophy className="w-4 h-4 text-cyan-400" />
+                        <span className="text-base font-extrabold">{profile.stats.total_episodes_watched}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">Melhor Ofensiva</span>
+                      <span className="text-[11px] text-slate-400 font-medium">Episódios</span>
                     </div>
 
                     <div className="bg-slate-800/40 border border-slate-800/80 rounded-2xl p-3.5 text-center">
                       <div className="text-emerald-400 flex items-center justify-center gap-1 mb-1">
-                        <BookOpen className="w-4 h-4" />
-                        <span className="text-base font-extrabold">{profile.stats.total_books_read}</span>
+                        <BookOpen className="w-4 h-4 text-emerald-400" />
+                        <span className="text-base font-extrabold">{profile.stats.total_reviews}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">Livros Lidos</span>
+                      <span className="text-[11px] text-slate-400 font-medium">Avaliações</span>
                     </div>
 
                     <div className="bg-slate-800/40 border border-slate-800/80 rounded-2xl p-3.5 text-center">
-                      <div className="text-teal-400 flex items-center justify-center gap-1 mb-1">
-                        <Sparkles className="w-4 h-4" />
-                        <span className="text-base font-extrabold">{profile.stats.total_pages_read}</span>
+                      <div className="text-yellow-400 flex items-center justify-center gap-1 mb-1">
+                        <Sparkles className="w-4 h-4 text-yellow-400" />
+                        <span className="text-base font-extrabold">
+                          {profile.stats.avg_rating > 0 ? profile.stats.avg_rating.toFixed(1) : '-'}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">Páginas Lidas</span>
+                      <span className="text-[11px] text-slate-400 font-medium">Nota Média</span>
                     </div>
                   </div>
                 )}
 
-                {/* Sub-Abas do Perfil */}
-                <div className="flex border-b border-slate-800 text-xs font-semibold gap-4">
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`pb-2.5 transition cursor-pointer ${
-                      activeTab === 'overview'
-                        ? 'text-emerald-400 border-b-2 border-emerald-400'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Estante ({profile.library?.length || 0})
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('achievements')}
-                    className={`pb-2.5 transition cursor-pointer flex items-center gap-1.5 ${
-                      activeTab === 'achievements'
-                        ? 'text-emerald-400 border-b-2 border-emerald-400'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <Award className="w-3.5 h-3.5" />
-                    Conquistas ({profile.achievements?.length || 0})
-                  </button>
-                </div>
-
-                {/* Aba Estante */}
-                {activeTab === 'overview' && (
-                  <div className="space-y-3">
-                    {profile.library && profile.library.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {profile.library.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center gap-3 p-3 bg-slate-800/40 border border-slate-800 rounded-2xl hover:border-slate-700 transition"
-                          >
-                            {item.book.cover_url ? (
-                              <img
-                                src={item.book.cover_url}
-                                alt={item.book.title}
-                                className="w-12 h-16 object-cover rounded-lg shadow shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-16 bg-slate-700/60 rounded-lg flex items-center justify-center text-slate-500 shrink-0">
-                                <BookOpen className="w-5 h-5" />
-                              </div>
-                            )}
-
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-xs font-bold text-white truncate">{item.book.title}</h4>
-                              <p className="text-[11px] text-slate-400 truncate">{item.book.author}</p>
-                              <div className="mt-1 flex items-center gap-2">
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                  item.status === 'read'
-                                    ? 'bg-emerald-500/10 text-emerald-400'
-                                    : item.status === 'reading'
-                                    ? 'bg-teal-500/10 text-teal-400'
-                                    : 'bg-slate-700/50 text-slate-300'
-                                }`}>
-                                  {item.status === 'read'
-                                    ? 'Lido'
-                                    : item.status === 'reading'
-                                    ? 'Lendo'
-                                    : 'Quero ler'}
-                                </span>
-                                {item.status === 'read' && (
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                                )}
-                              </div>
+                {/* Aba Videoteca */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Videoteca Pública ({profile.library?.length || 0})
+                  </h4>
+                  {profile.library && profile.library.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {profile.library.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-3 bg-slate-800/40 border border-slate-800 rounded-2xl hover:border-slate-700 transition"
+                        >
+                          {item.media?.poster_url ? (
+                            <img
+                              src={item.media.poster_url}
+                              alt={item.media.title}
+                              className="w-12 h-16 object-cover rounded-lg shadow shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-16 bg-slate-700/60 rounded-lg flex items-center justify-center text-slate-500 shrink-0">
+                              <BookOpen className="w-5 h-5" />
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 py-6 text-center">Nenhum livro público na estante.</p>
-                    )}
-                  </div>
-                )}
+                          )}
 
-                {/* Aba Conquistas */}
-                {activeTab === 'achievements' && (
-                  <div className="space-y-3">
-                    {profile.achievements && profile.achievements.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {profile.achievements.map((ua) => (
-                          <div
-                            key={ua.id}
-                            className="flex items-center gap-3 p-3 bg-slate-800/40 border border-slate-800 rounded-2xl"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-lg shrink-0">
-                              🏆
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="text-xs font-bold text-white truncate">
-                                {ua.achievement?.title || ua.achievement_code}
-                              </h4>
-                              <p className="text-[11px] text-slate-400 line-clamp-1">
-                                {ua.achievement?.description}
-                              </p>
-                              <span className="text-[10px] text-slate-500">
-                                Desbloqueada em {new Date(ua.unlocked_at).toLocaleDateString('pt-BR')}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold text-white truncate">{item.media?.title || 'Título'}</h4>
+                            <p className="text-[11px] text-slate-400 truncate">{item.media?.year}</p>
+                            <div className="mt-1 flex items-center gap-2">
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                item.status === 'completed'
+                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  : item.status === 'watching'
+                                  ? 'bg-cyan-500/10 text-cyan-400'
+                                  : 'bg-amber-500/10 text-amber-300'
+                              }`}>
+                                {item.status === 'completed'
+                                  ? 'Já Vi'
+                                  : item.status === 'watching'
+                                  ? 'Assistindo'
+                                  : 'Quero Ver'}
                               </span>
+                              {item.status === 'completed' && (
+                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 py-6 text-center">Nenhuma conquista desbloqueada ainda.</p>
-                    )}
-                  </div>
-                )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 py-6 text-center">Nenhum título público na videoteca.</p>
+                  )}
+                </div>
               </>
             )}
           </div>

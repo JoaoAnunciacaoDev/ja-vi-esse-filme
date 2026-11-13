@@ -3,6 +3,7 @@ import type {
   ActivityItem,
   ActivityComment,
   ActivityLiker,
+  LeaderboardCriterion,
   LeaderboardEntry,
   UserProfile,
   UserPrivacySettings,
@@ -20,7 +21,7 @@ export async function getSocialFeed(page: number = 1, limit: number = 20): Promi
 }
 
 export async function getLeaderboard(
-  criterion: 'pages' | 'books' | 'streak',
+  criterion: LeaderboardCriterion,
   year?: string,
   month?: string
 ): Promise<{

@@ -256,7 +256,7 @@ export function AdminPage() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-2xl">
-                  <span className="text-[11px] text-slate-400 font-medium block mb-1">Total de Leitores</span>
+                  <span className="text-[11px] text-slate-400 font-medium block mb-1">Total de Cinéfilos</span>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-extrabold text-white">
                       {dashboardData.overview.total_users}
@@ -276,45 +276,45 @@ export function AdminPage() {
                     </span>
                     <Flame className="w-5 h-5 text-teal-400" />
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-1 block">com leituras registradas</span>
+                  <span className="text-[10px] text-slate-400 mt-1 block">com sessões registradas</span>
                 </div>
 
                 <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-2xl">
-                  <span className="text-[11px] text-slate-400 font-medium block mb-1">Páginas Lidas Globais</span>
+                  <span className="text-[11px] text-slate-400 font-medium block mb-1">Sessões Assistidas</span>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-extrabold text-emerald-400">
-                      {dashboardData.overview.total_pages_read.toLocaleString('pt-BR')}
+                      {dashboardData.overview.total_watch_logs}
                     </span>
                     <ScrollText className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    em {dashboardData.overview.total_sessions} sessões
-                  </span>
-                </div>
-
-                <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-2xl">
-                  <span className="text-[11px] text-slate-400 font-medium block mb-1">Livros Cadastrados</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-extrabold text-sky-400">
-                      {dashboardData.overview.total_books}
-                    </span>
-                    <BookOpen className="w-5 h-5 text-sky-400" />
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">
                     {dashboardData.overview.total_reviews} avaliações
                   </span>
                 </div>
+
+                <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-2xl">
+                  <span className="text-[11px] text-slate-400 font-medium block mb-1">Mídias no Catálogo</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-extrabold text-sky-400">
+                      {dashboardData.overview.total_media}
+                    </span>
+                    <BookOpen className="w-5 h-5 text-sky-400" />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    {dashboardData.overview.total_movies} filmes • {dashboardData.overview.total_series} séries
+                  </span>
+                </div>
               </div>
 
-              {/* Leitores com Maior Ofensiva */}
+              {/* Top Cinéfilos */}
               <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 shadow">
                 <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                   <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  Leitores com Maiores Ofensivas Atuais
+                  Cinéfilos Mais Ativos na Plataforma
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {dashboardData.top_streakers.map((s, idx) => (
+                  {(dashboardData.top_cinephiles || []).map((s, idx) => (
                     <div
                       key={s.id}
                       className="p-3 bg-slate-800/40 border border-slate-800 rounded-2xl flex items-center justify-between"
@@ -328,7 +328,7 @@ export function AdminPage() {
                       </div>
                       <span className="text-xs font-extrabold text-amber-400 flex items-center gap-1">
                         <Flame className="w-3.5 h-3.5 fill-amber-400" />
-                        {s.streak} dias
+                        <span>{s.total_logs} vistos</span>
                       </span>
                     </div>
                   ))}
@@ -393,10 +393,10 @@ export function AdminPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-950/40">
-                      <th className="py-3 px-4">Leitor</th>
+                      <th className="py-3 px-4">Cinéfilo</th>
                       <th className="py-3 px-4">E-mail</th>
-                      <th className="py-3 px-4">Páginas Lidas</th>
-                      <th className="py-3 px-4">Livros</th>
+                      <th className="py-3 px-4">Títulos Vistos</th>
+                      <th className="py-3 px-4">Na Videoteca</th>
                       <th className="py-3 px-4">Papel</th>
                       <th className="py-3 px-4 text-right">Ações</th>
                     </tr>
@@ -409,8 +409,8 @@ export function AdminPage() {
                           <div className="text-[11px] text-slate-400">@{u.username}</div>
                         </td>
                         <td className="py-3 px-4 text-slate-300 font-mono text-[11px]">{u.email}</td>
-                        <td className="py-3 px-4 text-emerald-400 font-bold">{u.total_pages_read}</td>
-                        <td className="py-3 px-4 text-slate-300">{u.total_books_read}</td>
+                        <td className="py-3 px-4 text-emerald-400 font-bold">{u.total_logs}</td>
+                        <td className="py-3 px-4 text-slate-300">{u.total_media}</td>
                         <td className="py-3 px-4">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

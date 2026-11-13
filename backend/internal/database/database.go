@@ -41,13 +41,9 @@ func SyncSchemas(db *gorm.DB) error {
 		models := []interface{}{
 			&schemas.User{},
 			&schemas.Session{},
-			&schemas.Book{},
-			&schemas.UserBook{},
-			&schemas.ReadingSession{},
-			&schemas.DailyGoal{},
-			&schemas.GoalHistory{},
-			&schemas.Achievement{},
-			&schemas.UserAchievement{},
+			&schemas.MediaItem{},
+			&schemas.UserMedia{},
+			&schemas.WatchLog{},
 			&schemas.Follow{},
 			&schemas.UserPrivacySettings{},
 			&schemas.Activity{},
@@ -56,7 +52,6 @@ func SyncSchemas(db *gorm.DB) error {
 			&schemas.PatchNote{},
 			&schemas.ActivityLike{},
 			&schemas.ActivityComment{},
-			&schemas.BookReview{},
 		}
 
 		for _, m := range models {

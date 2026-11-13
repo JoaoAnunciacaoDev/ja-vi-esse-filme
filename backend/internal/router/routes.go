@@ -16,26 +16,23 @@ func initializeRoutes(r *gin.Engine, cfg *config.Config, db *gorm.DB) {
 	// Inicializa os manipuladores com as dependências do banco e configuração
 	handler.InitializeHandler(db, cfg)
 
-	// Popula conquistas padrao do sistema
-	handler.SeedAchievements(db)
-
 	// Health Check ativo
 	r.GET("/api/health", handler.HealthCheckHandler)
 
 	// Rate Limiter contra força bruta: até 5 requisições rápidas por IP
 	authRateLimit := middleware.RateLimiter(rate.Every(3*time.Second), 5)
-	// Rate Limiter para busca externa contra abuso de cotas (Google Books / Open Library)
+	// Rate Limiter para busca externa
 	searchRateLimit := middleware.RateLimiter(rate.Every(1*time.Second), 10)
 
 	api := r.Group("/api")
 	{
-		// Endpoints de Autenticação (estilo Go-Talent-Hub)
+		// Endpoints de Autenticação
 		api.POST("/auth/register", authRateLimit, handler.RegisterHandler)
 		api.POST("/auth/login", authRateLimit, handler.LoginHandler)
 		api.POST("/auth/logout", handler.LogoutHandler)
 		api.GET("/auth/me", middleware.RequireAuth(), handler.MeHandler)
 
-		// Administração (SUPERUSER - Fase 4)
+		// Administração (SUPERUSER)
 		admin := api.Group("/admin")
 		admin.Use(middleware.RequireAuth(), middleware.RequireRole("SUPERUSER"))
 		{
@@ -54,57 +51,38 @@ func initializeRoutes(r *gin.Engine, cfg *config.Config, db *gorm.DB) {
 			admin.DELETE("/patch-notes/:id", handler.AdminDeletePatchNoteHandler)
 		}
 
-		api.GET("/books", handler.ListBooksHandler)
-		api.GET("/books/:id", handler.ShowBookHandler)
-		api.GET("/books/search-external", searchRateLimit, handler.SearchExternalBooksHandler)
-		api.POST("/books", middleware.RequireAuth(), handler.CreateBookHandler)
-		api.POST("/books/import", middleware.RequireAuth(), handler.ImportBookHandler)
+		// Catálogo de Mídias (Filmes e Séries)
+		api.GET("/media", handler.ListMediaHandler)
+		api.GET("/media/:id", handler.ShowMediaHandler)
+		api.GET("/media/search-external", searchRateLimit, handler.SearchExternalMediaHandler)
+		api.POST("/media", middleware.RequireAuth(), handler.CreateMediaHandler)
+		api.POST("/media/import", middleware.RequireAuth(), handler.ImportMediaHandler)
+		api.GET("/media/:id/reviews", handler.ListMediaReviewsHandler)
 
-		// Avaliações de Livros
-		api.GET("/books/:id/reviews", handler.ListBookReviewsHandler)
-		api.POST("/books/:id/reviews", middleware.RequireAuth(), handler.CreateBookReviewHandler)
-		reviews := api.Group("/reviews")
-		reviews.Use(middleware.RequireAuth())
+		// Minha Lista / Watchlist (Videoteca do Usuário)
+		watchlist := api.Group("/watchlist")
+		watchlist.Use(middleware.RequireAuth())
 		{
-			reviews.GET("/me", handler.ListMyReviewsHandler)
-			reviews.PUT("/:id", handler.UpdateReviewHandler)
-			reviews.DELETE("/:id", handler.DeleteReviewHandler)
+			watchlist.GET("", handler.ListUserMediaHandler)
+			watchlist.POST("", handler.AddToUserMediaHandler)
+			watchlist.PUT("/:id", handler.UpdateUserMediaHandler)
+			watchlist.DELETE("/:id", handler.DeleteUserMediaHandler)
+			watchlist.PATCH("/:id/favorite", handler.ToggleMediaFavoriteHandler)
+			watchlist.PATCH("/:id/collection", handler.ToggleMediaInCollectionHandler)
 		}
 
-		// Biblioteca Pessoal (Estante do Usuário - Etapa 6)
-		library := api.Group("/library")
-		library.Use(middleware.RequireAuth())
+		// Diário de Sessões e Avaliações (Watch Logs)
+		watchLogs := api.Group("/watch-logs")
+		watchLogs.Use(middleware.RequireAuth())
 		{
-			library.GET("", handler.ListLibraryHandler)
-			library.POST("", handler.AddToLibraryHandler)
-			library.PUT("/:id", handler.UpdateLibraryBookHandler)
-			library.DELETE("/:id", handler.DeleteLibraryBookHandler)
-			library.PATCH("/:id/favorite", handler.ToggleFavoriteHandler)
-			library.PATCH("/:id/collection", handler.ToggleInCollectionHandler)
+			watchLogs.POST("", handler.CreateWatchLogHandler)
+			watchLogs.GET("", handler.ListWatchLogsHandler)
+			watchLogs.GET("/summary", handler.GetWatchLogSummaryHandler)
+			watchLogs.PUT("/:id", handler.UpdateWatchLogHandler)
+			watchLogs.DELETE("/:id", handler.DeleteWatchLogHandler)
 		}
 
-		// Sessões de Leitura (Etapa 7)
-		sessions := api.Group("/reading-sessions")
-		sessions.Use(middleware.RequireAuth())
-		{
-			sessions.POST("", handler.CreateReadingSessionHandler)
-			sessions.GET("", handler.ListReadingSessionsHandler)
-			sessions.GET("/today", handler.TodayReadingSummaryHandler)
-			sessions.PUT("/:id", handler.UpdateReadingSessionHandler)
-			sessions.DELETE("/:id", handler.DeleteReadingSessionHandler)
-		}
-
-		// Metas Diárias e Streaks (Etapa 8)
-		goals := api.Group("/goals")
-		goals.Use(middleware.RequireAuth())
-		{
-			goals.GET("", handler.GetGoalHandler)
-			goals.PUT("", handler.UpdateGoalHandler)
-			goals.GET("/streak", handler.GetStreakHandler)
-			goals.GET("/history", handler.GetGoalHistoryHandler)
-		}
-
-		// Estatísticas e Dashboard (Fase 2)
+		// Estatísticas e Dashboard
 		stats := api.Group("/stats")
 		stats.Use(middleware.RequireAuth())
 		{
@@ -112,10 +90,7 @@ func initializeRoutes(r *gin.Engine, cfg *config.Config, db *gorm.DB) {
 			stats.GET("/heatmap", handler.GetHeatmapHandler)
 		}
 
-		// Conquistas (Gamificação - Fase 2)
-		api.GET("/achievements", middleware.RequireAuth(), handler.ListAchievementsHandler)
-
-		// Funcionalidades Sociais, Perfis & Rankings (Fase 3)
+		// Funcionalidades Sociais & Perfis
 		users := api.Group("/users")
 		users.Use(middleware.RequireAuth())
 		{
@@ -144,12 +119,12 @@ func initializeRoutes(r *gin.Engine, cfg *config.Config, db *gorm.DB) {
 			social.DELETE("/comments/:id", handler.DeleteActivityCommentHandler)
 		}
 
-		// Patch Notes (Notas de Atualização - Fase 4)
+		// Patch Notes (Notas de Atualização)
 		api.GET("/patch-notes", handler.ListPublishedPatchNotesHandler)
 		api.GET("/patch-notes/latest", handler.GetLatestPatchNoteHandler)
 		api.GET("/patch-notes/:id", handler.GetPatchNoteHandler)
 
-		// Notificações Push & Lembretes (Fase 4)
+		// Notificações Push
 		api.GET("/notifications/vapid-public-key", handler.GetVapidPublicKeyHandler)
 		notifications := api.Group("/notifications")
 		notifications.Use(middleware.RequireAuth())
@@ -161,7 +136,7 @@ func initializeRoutes(r *gin.Engine, cfg *config.Config, db *gorm.DB) {
 			notifications.POST("/test", handler.SendTestNotificationHandler)
 		}
 
-		// Cron Jobs (Lembretes Automáticos Serverless)
+		// Cron Jobs
 		api.GET("/cron/reminders", handler.CronRemindersHandler)
 		api.POST("/cron/reminders", handler.CronRemindersHandler)
 	}

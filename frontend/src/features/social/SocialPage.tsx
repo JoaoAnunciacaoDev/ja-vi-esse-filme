@@ -17,6 +17,7 @@ import type {
   ActivityItem,
   ActivityComment,
   ActivityLiker,
+  LeaderboardCriterion,
   LeaderboardEntry,
   UserSearchResult,
 } from '@/types/social'
@@ -27,11 +28,9 @@ import {
   Flame,
   Trophy,
   BookOpen,
-  CheckCircle2,
   Target,
   ScrollText,
   Star,
-  Award,
   Search,
   UserPlus,
   Users,
@@ -65,7 +64,7 @@ export function SocialPage() {
   const [isLikersLoading, setIsLikersLoading] = useState(false)
 
   // Rankings State
-  const [rankingCriterion, setRankingCriterion] = useState<'pages' | 'books' | 'streak'>('pages')
+  const [rankingCriterion, setRankingCriterion] = useState<LeaderboardCriterion>('watched')
   const [rankingYear, setRankingYear] = useState<number>(CURRENT_YEAR)
 
   // Discover / Search State
@@ -293,10 +292,10 @@ export function SocialPage() {
             <span className="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
               <Users className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-extrabold text-white tracking-tight">Comunidade de Leitores</h1>
+            <h1 className="text-xl font-extrabold text-white tracking-tight">Comunidade Cinéfila</h1>
           </div>
           <p className="text-xs text-slate-400">
-            Acompanhe a evolução de leitura dos seus amigos, celebre conquistas e compita nos rankings mensais.
+            Acompanhe o que seus amigos estão assistindo, leia resenhas e veja quem mais assiste títulos no ano.
           </p>
         </div>
 
@@ -423,101 +422,58 @@ export function SocialPage() {
                         </div>
 
                         {/* Conteúdo Contextual por Tipo de Atividade */}
-                        {item.type === 'BOOK_FINISHED' && (
-                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                            <div className="text-xs">
-                              <span className="text-slate-300">Concluiu o livro </span>
-                              <strong className="text-white font-semibold">
-                                "{item.book?.title || meta.book_title || 'Livro'}"
-                              </strong>
-                              <span className="text-emerald-400 font-bold ml-1">🎉 Parabéns!</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {item.type === 'BOOK_STARTED' && (
+                        {item.type === 'WATCHED_MOVIE' && (
                           <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-2xl">
                             <BookOpen className="w-5 h-5 text-sky-400 shrink-0" />
                             <div className="text-xs">
-                              <span className="text-slate-300">Iniciou uma nova leitura: </span>
+                              <span className="text-slate-300">Assistiu ao filme: </span>
                               <strong className="text-white font-semibold">
-                                "{item.book?.title || meta.book_title || 'Livro'}"
+                                "{item.media?.title || meta.media_title || 'Filme'}"
                               </strong>
+                              {meta.platform && (
+                                <span className="text-slate-400 text-[11px] block mt-0.5">
+                                  no {meta.platform} {meta.is_rewatch ? '• Reassistido' : ''}
+                                </span>
+                              )}
                             </div>
                           </div>
                         )}
 
-                        {item.type === 'GOAL_MET' && (
-                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                            <Target className="w-5 h-5 text-amber-400 shrink-0" />
+                        {item.type === 'WATCHED_EPISODE' && (
+                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl">
+                            <ScrollText className="w-5 h-5 text-cyan-400 shrink-0" />
                             <div className="text-xs">
-                              <span className="text-slate-300">Bateu a meta diária de leitura! </span>
-                              <span className="text-amber-400 font-bold">
-                                ({meta.pages_read || '20+'} páginas lidas hoje)
+                              <span className="text-slate-300">Assistiu a um episódio de </span>
+                              <strong className="text-white font-bold">"{item.media?.title || meta.media_title || 'Série'}"</strong>
+                              <span className="text-cyan-400 font-semibold block text-[11px] mt-0.5">
+                                Temporada {meta.season_number || 1}, Ep. {meta.episode_number || 1} {meta.platform ? `no ${meta.platform}` : ''}
                               </span>
                             </div>
                           </div>
                         )}
 
-                        {item.type === 'STREAK_MILESTONE' && (
-                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
-                            <Flame className="w-5 h-5 text-orange-400 fill-orange-400 shrink-0" />
+                        {item.type === 'ADDED_TO_WATCHLIST' && (
+                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                            <Target className="w-5 h-5 text-amber-400 shrink-0" />
                             <div className="text-xs">
-                              <span className="text-slate-300">Alcançou a marca incrível de </span>
-                              <strong className="text-orange-400 font-bold">{meta.streak} dias seguidos</strong>
-                              <span className="text-slate-300"> de leitura! 🔥</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {item.type === 'READING_SESSION' && (
-                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-slate-800/50 border border-slate-700/60 rounded-2xl">
-                            <ScrollText className="w-5 h-5 text-purple-400 shrink-0" />
-                            <div className="text-xs">
-                              <span className="text-slate-300">Leu </span>
-                              <strong className="text-white font-bold">{meta.pages_read} páginas</strong>
-                              <span className="text-slate-300"> de </span>
-                              <strong className="text-slate-200">
-                                "{item.book?.title || meta.book_title || 'sua leitura'}"
+                              <span className="text-slate-300">Adicionou à lista de assistir mais tarde: </span>
+                              <strong className="text-white font-semibold">
+                                "{item.media?.title || meta.media_title || 'Título'}"
                               </strong>
-                              {meta.start_page !== undefined && meta.end_page !== undefined && (
-                                <span className="text-slate-500 text-[11px] block mt-0.5">
-                                  Páginas {meta.start_page} até {meta.end_page}
-                                </span>
-                              )}
                             </div>
                           </div>
                         )}
 
-                        {item.type === 'REVIEW_POSTED' && (
+                        {(item.type === 'RATED_MEDIA' || item.type === 'REVIEW_POSTED') && (
                           <div className="mt-1.5 p-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl">
                             <div className="flex items-center gap-1.5 text-xs text-yellow-400 font-bold mb-1">
                               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                              <span>Avaliou com nota {meta.rating}/10</span>
-                              <span className="text-slate-300 font-normal">"{meta.book_title}"</span>
+                              <span>Avaliou com nota {meta.rating || 5}/5</span>
+                              <span className="text-slate-300 font-normal">"{item.media?.title || meta.media_title || meta.book_title || 'Título'}"</span>
                             </div>
-                            {meta.comment && (
-                              <p className="text-xs text-slate-300 italic line-clamp-2">"{meta.comment}"</p>
+                            {(meta.review || meta.comment) && (
+                              <p className="text-xs text-slate-300 italic line-clamp-2">"{meta.review || meta.comment}"</p>
                             )}
-                          </div>
-                        )}
-
-                        {item.type === 'ACHIEVEMENT_UNLOCKED' && (
-                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-teal-500/10 border border-teal-500/20 rounded-2xl">
-                            <Award className="w-5 h-5 text-teal-400 shrink-0" />
-                            <div className="text-xs">
-                              <span className="text-slate-300">Desbloqueou a conquista </span>
-                              <strong className="text-teal-400 font-bold">"{meta.title || meta.code}"</strong>
-                              {meta.tier && (
-                                <span className="text-[10px] font-bold uppercase ml-1 px-1.5 py-0.2 bg-teal-500/20 text-teal-300 rounded">
-                                  {meta.tier}
-                                </span>
-                              )}
-                              {meta.description && (
-                                <span className="text-slate-400 block text-[11px] mt-0.5">{meta.description}</span>
-                              )}
-                            </div>
                           </div>
                         )}
 
@@ -687,62 +643,66 @@ export function SocialPage() {
               <span className="text-xs font-semibold text-slate-400">Classificação por:</span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setRankingCriterion('pages')}
+                  onClick={() => setRankingCriterion('watched')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    rankingCriterion === 'pages'
-                      ? 'bg-emerald-500 text-white'
+                    rankingCriterion === 'watched'
+                      ? 'bg-emerald-500 text-slate-950 font-bold'
                       : 'bg-slate-800 text-slate-400 hover:text-white'
                   }`}
                 >
-                  Mais Páginas no Ano
+                  Mais Assistidos
                 </button>
                 <button
-                  onClick={() => setRankingCriterion('books')}
+                  onClick={() => setRankingCriterion('movies')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    rankingCriterion === 'books'
-                      ? 'bg-emerald-500 text-white'
+                    rankingCriterion === 'movies'
+                      ? 'bg-amber-500 text-slate-950 font-bold'
                       : 'bg-slate-800 text-slate-400 hover:text-white'
                   }`}
                 >
-                  Mais Livros no Ano
+                  Mais Filmes
                 </button>
                 <button
-                  onClick={() => setRankingCriterion('streak')}
+                  onClick={() => setRankingCriterion('episodes')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    rankingCriterion === 'streak'
-                      ? 'bg-emerald-500 text-white'
+                    rankingCriterion === 'episodes'
+                      ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'bg-slate-800 text-slate-400 hover:text-white'
                   }`}
                 >
-                  Maior Ofensiva
+                  Mais Episódios
+                </button>
+                <button
+                  onClick={() => setRankingCriterion('reviews')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    rankingCriterion === 'reviews'
+                      ? 'bg-purple-500 text-white font-bold'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Mais Avaliações
                 </button>
               </div>
             </div>
 
             {/* Seletor de Ano */}
-            {rankingCriterion !== 'streak' ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Ano:</span>
-                </span>
-                <select
-                  value={rankingYear}
-                  onChange={(e) => setRankingYear(Number(e.target.value))}
-                  className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-emerald-500 cursor-pointer"
-                >
-                  {RANKING_YEAR_OPTIONS.map((y) => (
-                    <option key={y} value={y} className="bg-slate-900 text-white">
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <span className="text-[11px] text-slate-500 bg-slate-800/60 px-2.5 py-1 rounded-xl border border-slate-700/40">
-                Sequência ativa contínua
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Ano:</span>
               </span>
-            )}
+              <select
+                value={rankingYear}
+                onChange={(e) => setRankingYear(Number(e.target.value))}
+                className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-emerald-500 cursor-pointer"
+              >
+                {RANKING_YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y} className="bg-slate-900 text-white">
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {isRankingsLoading ? (

@@ -12,7 +12,7 @@ func HealthCheckHandler(c *gin.Context) {
 	if err != nil || sqlDB.Ping() != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"status":    "unhealthy",
-			"service":   "silverfish-api",
+			"service":   "javiessefilme-api",
 			"database":  "disconnected",
 			"error":     "falha na conexão com o banco de dados",
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -20,16 +20,16 @@ func HealthCheckHandler(c *gin.Context) {
 		return
 	}
 
-	googleBooksStatus := "unconfigured"
-	if cfg != nil && cfg.GoogleBooksAPIKey != "" {
-		googleBooksStatus = "configured"
+	tmdbStatus := "unconfigured"
+	if cfg != nil && cfg.TmdbAPIKey != "" {
+		tmdbStatus = "configured"
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":           "healthy",
-		"service":          "silverfish-api",
-		"database":         cfg.DBDriver,
-		"google_books_api": googleBooksStatus,
-		"timestamp":        time.Now().UTC().Format(time.RFC3339),
+		"status":    "healthy",
+		"service":   "javiessefilme-api",
+		"database":  cfg.DBDriver,
+		"tmdb_api":  tmdbStatus,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	})
 }

@@ -10,13 +10,12 @@ const (
 	FollowStatusAccepted = "accepted"
 	FollowStatusPending  = "pending"
 
-	ActivityBookStarted         = "BOOK_STARTED"
-	ActivityBookFinished        = "BOOK_FINISHED"
-	ActivityGoalMet             = "GOAL_MET"
-	ActivityStreakMilestone     = "STREAK_MILESTONE"
-	ActivityReadingSession      = "READING_SESSION"
-	ActivityReviewPosted        = "REVIEW_POSTED"
-	ActivityAchievementUnlocked = "ACHIEVEMENT_UNLOCKED"
+	ActivityWatchedMovie     = "WATCHED_MOVIE"
+	ActivityWatchedEpisode   = "WATCHED_EPISODE"
+	ActivityWatchedSeason    = "WATCHED_SEASON"
+	ActivityAddedToWatchlist = "ADDED_TO_WATCHLIST"
+	ActivityRatedMedia       = "RATED_MEDIA"
+	ActivityReviewPosted     = "REVIEW_POSTED"
 )
 
 type UserPrivacySettings struct {
@@ -42,13 +41,15 @@ type Follow struct {
 }
 
 type Activity struct {
-	ID        string    `json:"id" gorm:"primaryKey"`
-	UserID    string    `json:"user_id" gorm:"not null;index"`
-	Type      string    `json:"type" gorm:"not null;index"`
-	BookID    *string   `json:"book_id,omitempty"`
-	Metadata  string    `json:"metadata,omitempty"` // JSON string
-	CreatedAt time.Time `json:"created_at" gorm:"index"`
+	ID         string     `json:"id" gorm:"primaryKey"`
+	UserID     string     `json:"user_id" gorm:"not null;index"`
+	Type       string     `json:"type" gorm:"not null;index"`
+	MediaID    *string    `json:"media_id,omitempty"`
+	WatchLogID *string    `json:"watch_log_id,omitempty"`
+	Metadata   string     `json:"metadata,omitempty"` // JSON string
+	CreatedAt  time.Time  `json:"created_at" gorm:"index"`
 
-	User User  `json:"user" gorm:"foreignKey:UserID"`
-	Book *Book `json:"book,omitempty" gorm:"foreignKey:BookID"`
+	User     User       `json:"user" gorm:"foreignKey:UserID"`
+	Media    *MediaItem `json:"media,omitempty" gorm:"foreignKey:MediaID"`
+	WatchLog *WatchLog  `json:"watch_log,omitempty" gorm:"foreignKey:WatchLogID"`
 }

@@ -1,10 +1,10 @@
 import { apiClient } from './client'
-import type { DashboardStats, HeatmapResponse } from '@/types/stats'
+import type { DashboardStats, HeatmapDay } from '@/types/stats'
 
-export async function getDashboardStats(): Promise<DashboardStats> {
-  return apiClient<DashboardStats>('/api/stats/dashboard')
-}
+export const statsApi = {
+  getDashboard: (): Promise<DashboardStats> =>
+    apiClient.get<DashboardStats>('/api/stats/dashboard'),
 
-export async function getHeatmapData(): Promise<HeatmapResponse> {
-  return apiClient<HeatmapResponse>('/api/stats/heatmap')
+  getHeatmap: (): Promise<{ days: HeatmapDay[] }> =>
+    apiClient.get<{ days: HeatmapDay[] }>('/api/stats/heatmap'),
 }

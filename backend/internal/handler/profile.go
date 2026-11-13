@@ -97,36 +97,32 @@ func GetUserProfileHandler(c *gin.Context) {
 		// Estatísticas públicas
 		canViewStats := isSelf || privacy.StatsVisibility == schemas.VisibilityPublic || (privacy.StatsVisibility == schemas.VisibilityFollowers && isFollowing)
 		if canViewStats {
-			var totalPages int64
-			_ = db.Model(&schemas.ReadingSession{}).Where("user_id = ?", targetUser.ID).Select("COALESCE(SUM(pages_read), 0)").Scan(&totalPages).Error
+			var totalMoviesWatched int64
+			_ = db.Model(&schemas.WatchLog{}).Where("user_id = ? AND media_type = 'movie'", targetUser.ID).Count(&totalMoviesWatched).Error
 
-			var totalBooksRead int64
-			_ = db.Model(&schemas.UserBook{}).Where("user_id = ? AND status = ?", targetUser.ID, schemas.StatusRead).Count(&totalBooksRead).Error
+			var totalEpisodesWatched int64
+			_ = db.Model(&schemas.WatchLog{}).Where("user_id = ? AND media_type = 'tv'", targetUser.ID).Count(&totalEpisodesWatched).Error
 
-			var historyList []schemas.GoalHistory
-			_ = db.Where("user_id = ?", targetUser.ID).Order("date DESC").Find(&historyList).Error
-			today := getTodayInTimezone(targetUser.Timezone)
-			currentStreak, bestStreak := calculateStreaks(historyList, today)
+			var totalReviews int64
+			_ = db.Model(&schemas.WatchLog{}).Where("user_id = ? AND (rating > 0 OR review != '')", targetUser.ID).Count(&totalReviews).Error
+
+			var avgRating float64
+			_ = db.Model(&schemas.WatchLog{}).Where("user_id = ? AND rating > 0", targetUser.ID).Select("COALESCE(AVG(rating), 0)").Scan(&avgRating).Error
 
 			response["stats"] = gin.H{
-				"total_pages_read": totalPages,
-				"total_books_read": totalBooksRead,
-				"current_streak":   currentStreak,
-				"best_streak":      bestStreak,
+				"total_movies_watched":   totalMoviesWatched,
+				"total_episodes_watched": totalEpisodesWatched,
+				"total_reviews":          totalReviews,
+				"avg_rating":             avgRating,
 			}
 		}
 
-		// Conquistas desbloqueadas
-		var userAchievements []schemas.UserAchievement
-		_ = db.Preload("Achievement").Where("user_id = ?", targetUser.ID).Order("unlocked_at DESC").Find(&userAchievements).Error
-		response["achievements"] = userAchievements
-
-		// Livros da estante pública
+		// Videoteca / Lista pública
 		canViewLibrary := isSelf || privacy.LibraryVisibility == schemas.VisibilityPublic || (privacy.LibraryVisibility == schemas.VisibilityFollowers && isFollowing)
 		if canViewLibrary {
-			var userBooks []schemas.UserBook
-			_ = db.Preload("Book").Where("user_id = ?", targetUser.ID).Order("updated_at DESC").Find(&userBooks).Error
-			response["library"] = userBooks
+			var userMediaList []schemas.UserMedia
+			_ = db.Preload("Media").Where("user_id = ?", targetUser.ID).Order("updated_at DESC").Find(&userMediaList).Error
+			response["library"] = userMediaList
 		}
 	}
 

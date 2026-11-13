@@ -3,10 +3,14 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/lib/queryClient'
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext'
 import { AuthPage } from '@/features/auth/AuthPage'
-import { LibraryPage } from '@/features/library/LibraryPage'
+import { MediaCatalogPage } from '@/features/media/MediaCatalogPage'
+import { WatchlistPage } from '@/features/watchlist/WatchlistPage'
+import { DiaryPage } from '@/features/diary/DiaryPage'
+import { LogMediaModal } from '@/features/diary/LogMediaModal'
 import { Footer } from '@/components/layout/Footer'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { NotFoundPage } from '@/components/NotFoundPage'
+import type { MediaItem, ExternalMediaResult } from '@/types/media'
 import {
   buildTabUrl,
   resolveAppRoute,
@@ -14,14 +18,13 @@ import {
   type AppTab,
 } from '@/utils/routing'
 import {
-  BookOpen,
+  Film,
   Compass,
-  Library,
-  LineChart,
+  Bookmark,
+  BarChart3,
   Loader2,
   LogOut,
   RefreshCw,
-  ScrollText,
   Users,
   Settings,
   ShieldCheck,
@@ -30,14 +33,8 @@ import {
   WifiOff,
 } from 'lucide-react'
 
-const BookCatalogPage = lazy(() =>
-  import('@/features/books/BookCatalogPage').then((m) => ({ default: m.BookCatalogPage }))
-)
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage }))
-)
-const JournalPage = lazy(() =>
-  import('@/features/journal/JournalPage').then((m) => ({ default: m.JournalPage }))
 )
 const SocialPage = lazy(() =>
   import('@/features/social/SocialPage').then((m) => ({ default: m.SocialPage }))
@@ -59,47 +56,68 @@ const NotificationSettingsModal = lazy(() =>
 
 function TabLoadingFallback() {
   return (
-    <div className="py-20 flex flex-col items-center justify-center space-y-3 text-slate-400">
-      <Loader2 className="w-7 h-7 animate-spin text-emerald-400" />
-      <p className="text-xs">Carregando seção...</p>
+    <div className="flex flex-col items-center justify-center py-20 space-y-3 text-slate-400">
+      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      <span className="text-xs font-medium">Carregando conteúdo...</span>
     </div>
   )
 }
 
-interface MainLayoutProps {
-  route: AppRoute
+interface AuthenticatedAppProps {
+  currentTab: AppTab
   onSelectTab: (tab: AppTab) => void
+  route: AppRoute
 }
 
-function MainLayout({ route, onSelectTab }: MainLayoutProps) {
-  const { user, logout, isReconnecting, connectionError, refreshUser } = useAuth()
-  const currentTab = route.kind === 'tab' ? route.tab : null
+function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppProps) {
+  const { user, logout, connectionError, isReconnecting, refreshUser } = useAuth()
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
   const [isPatchNotesOpen, setIsPatchNotesOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+
+  // Estado do Modal de Registrar Sessão / Experiência
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false)
+  const [selectedMediaForLog, setSelectedMediaForLog] = useState<MediaItem | ExternalMediaResult | undefined>()
+
+  const handleOpenLogModal = (media?: MediaItem | ExternalMediaResult) => {
+    setSelectedMediaForLog(media)
+    setIsLogModalOpen(true)
+  }
 
   const isSuperUser = user?.role === 'SUPERUSER'
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Header limpo e profissional */}
+      {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center space-x-6">
             <div
               className="flex items-center space-x-3 cursor-pointer"
-              onClick={() => onSelectTab('library')}
+              onClick={() => onSelectTab('catalog')}
             >
               <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
-                <BookOpen className="w-6 h-6" />
+                <Film className="w-6 h-6" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white hidden sm:inline">
+              <span className="text-xl font-extrabold tracking-tight text-white hidden sm:inline">
                 Já Vi Esse Filme
               </span>
             </div>
 
-            {/* Navegação desktop */}
+            {/* Navegação Desktop */}
             <nav className="hidden md:flex items-center space-x-1">
+              <button
+                onClick={() => onSelectTab('catalog')}
+                className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  currentTab === 'catalog'
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+              >
+                <Compass className="w-4 h-4" />
+                <span>Explorar</span>
+              </button>
+
               <button
                 onClick={() => onSelectTab('library')}
                 className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -108,8 +126,8 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
-                <Library className="w-4 h-4" />
-                <span>Minha Estante</span>
+                <Bookmark className="w-4 h-4" />
+                <span>Minha Lista</span>
               </button>
 
               <button
@@ -120,7 +138,7 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
-                <ScrollText className="w-4 h-4" />
+                <Film className="w-4 h-4" />
                 <span>Diário</span>
               </button>
 
@@ -132,8 +150,8 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
-                <LineChart className="w-4 h-4" />
-                <span>Painel & Metas</span>
+                <BarChart3 className="w-4 h-4" />
+                <span>Estatísticas</span>
               </button>
 
               <button
@@ -146,18 +164,6 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
               >
                 <Users className="w-4 h-4" />
                 <span>Comunidade</span>
-              </button>
-
-              <button
-                onClick={() => onSelectTab('catalog')}
-                className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  currentTab === 'catalog'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-              >
-                <Compass className="w-4 h-4" />
-                <span>Buscar Livros</span>
               </button>
 
               {/* Botão de Painel Admin exclusivo para SUPERUSER */}
@@ -177,9 +183,16 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
             </nav>
           </div>
 
-          {/* Atalhos Rápidos & Perfil */}
+          {/* Ações Rápidas */}
           <div className="flex items-center space-x-2">
-            {/* Notas de Atualização / Novidades */}
+            <button
+              onClick={() => handleOpenLogModal()}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/20"
+            >
+              <span>+ Já Vi</span>
+            </button>
+
+            {/* Patch Notes */}
             <button
               onClick={() => setIsPatchNotesOpen(true)}
               className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition cursor-pointer"
@@ -188,11 +201,11 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
               <Sparkles className="w-4 h-4" />
             </button>
 
-            {/* Lembretes e Notificações */}
+            {/* Lembretes */}
             <button
               onClick={() => setIsNotificationsOpen(true)}
               className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition cursor-pointer"
-              title="Configurar Lembretes de Leitura"
+              title="Configurações de Notificações"
             >
               <Bell className="w-4 h-4" />
             </button>
@@ -222,7 +235,7 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
         </div>
       </header>
 
-      {/* Conteúdo Principal com padding inferior para a barra mobile */}
+      {/* Conteúdo Principal */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24 md:pb-8">
         {connectionError && (
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-200">
@@ -248,78 +261,93 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
               <NotFoundPage
                 path={route.path}
                 isAuthenticated
-                onGoHome={() => onSelectTab('library')}
+                onGoHome={() => onSelectTab('catalog')}
               />
             ) : currentTab === 'library' ? (
-              <LibraryPage onNavigateToCatalog={() => onSelectTab('catalog')} />
+              <WatchlistPage
+                onOpenLogModal={handleOpenLogModal}
+                onNavigateToCatalog={() => onSelectTab('catalog')}
+              />
             ) : currentTab === 'journal' ? (
-              <JournalPage />
+              <DiaryPage
+                onOpenLogModal={handleOpenLogModal}
+                onNavigateToCatalog={() => onSelectTab('catalog')}
+              />
             ) : currentTab === 'dashboard' ? (
               <DashboardPage />
             ) : currentTab === 'social' ? (
               <SocialPage />
             ) : currentTab === 'admin' ? (
-              isSuperUser ? <AdminPage /> : <LibraryPage onNavigateToCatalog={() => onSelectTab('catalog')} />
+              isSuperUser ? <AdminPage /> : <MediaCatalogPage onOpenLogModal={handleOpenLogModal} />
             ) : (
-              <BookCatalogPage />
+              <MediaCatalogPage onOpenLogModal={handleOpenLogModal} />
             )}
           </Suspense>
         </ErrorBoundary>
       </main>
 
-      {/* Rodapé com créditos */}
+      {/* Rodapé */}
       <div className="pb-16 md:pb-0">
         <Footer />
       </div>
 
-      {/* Barra de Navegação Inferior para Mobile (estilo App / PWA) */}
+      {/* Barra de Navegação Inferior (Mobile PWA) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-2 px-1 flex items-center justify-around shadow-2xl">
         <button
+          onClick={() => onSelectTab('catalog')}
+          aria-label="Explorar Filmes e Séries"
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
+            currentTab === 'catalog'
+              ? 'text-emerald-400 bg-emerald-500/10'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Compass className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-semibold">Explorar</span>
+        </button>
+
+        <button
           onClick={() => onSelectTab('library')}
-          aria-label="Minha Estante de Livros"
-          title="Minha Estante"
+          aria-label="Minha Lista"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'library'
               ? 'text-emerald-400 bg-emerald-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Library className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-semibold">Estante</span>
+          <Bookmark className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-semibold">Lista</span>
         </button>
 
         <button
           onClick={() => onSelectTab('journal')}
-          aria-label="Diário de Leitura"
-          title="Diário"
+          aria-label="Diário de Sessões"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'journal'
               ? 'text-emerald-400 bg-emerald-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <ScrollText className="w-5 h-5 mb-0.5" />
+          <Film className="w-5 h-5 mb-0.5" />
           <span className="text-[10px] font-semibold">Diário</span>
         </button>
 
         <button
           onClick={() => onSelectTab('dashboard')}
-          aria-label="Painel de Estatísticas e Metas"
-          title="Painel"
+          aria-label="Estatísticas Cinéfilas"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'dashboard'
               ? 'text-emerald-400 bg-emerald-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <LineChart className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-semibold">Painel</span>
+          <BarChart3 className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] font-semibold">Stats</span>
         </button>
 
         <button
           onClick={() => onSelectTab('social')}
-          aria-label="Comunidade de Leitores"
-          title="Social"
+          aria-label="Comunidade"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'social'
               ? 'text-emerald-400 bg-emerald-500/10'
@@ -330,27 +358,10 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
           <span className="text-[10px] font-semibold">Social</span>
         </button>
 
-        {/* Aba Buscar Livros (sempre visível para todos os usuários) */}
-        <button
-          onClick={() => onSelectTab('catalog')}
-          aria-label="Buscar e Descobrir Livros"
-          title="Buscar"
-          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
-            currentTab === 'catalog'
-              ? 'text-emerald-400 bg-emerald-500/10'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Compass className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-semibold">Buscar</span>
-        </button>
-
-        {/* Atalho Admin exclusivo para SUPERUSER (sem ocultar a busca) */}
         {isSuperUser && (
           <button
             onClick={() => onSelectTab('admin')}
             aria-label="Painel de Administração"
-            title="Admin"
             className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
               currentTab === 'admin'
                 ? 'text-indigo-400 bg-indigo-500/10'
@@ -363,8 +374,17 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
         )}
       </nav>
 
-      {/* Modais da Aplicação */}
+      {/* Modais */}
       <Suspense fallback={null}>
+        <LogMediaModal
+          isOpen={isLogModalOpen}
+          onClose={() => {
+            setIsLogModalOpen(false)
+            setSelectedMediaForLog(undefined)
+          }}
+          initialMedia={selectedMediaForLog}
+        />
+
         {isPrivacyModalOpen && (
           <PrivacySettingsModal onClose={() => setIsPrivacyModalOpen(false)} />
         )}
@@ -382,7 +402,7 @@ function MainLayout({ route, onSelectTab }: MainLayoutProps) {
 }
 
 function Main() {
-  const { isAuthenticated, isLoading, connectionError, refreshUser, dismissConnectionError } = useAuth()
+  const { isAuthenticated, isLoading, connectionError, isReconnecting, refreshUser, dismissConnectionError } = useAuth()
   const [route, setRoute] = useState<AppRoute>(() =>
     resolveAppRoute(window.location.pathname, window.location.search)
   )
@@ -395,7 +415,7 @@ function Main() {
     window.addEventListener('popstate', syncFromLocation)
 
     const handleSwMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'SILVERFISH_NAVIGATE' && typeof event.data.url === 'string') {
+      if (event.data?.type === 'JAVIESSEFILME_NAVIGATE' && typeof event.data.url === 'string') {
         const parsed = new URL(event.data.url, window.location.origin)
         window.history.pushState({}, '', parsed.pathname + parsed.search)
         setRoute(resolveAppRoute(parsed.pathname, parsed.search))
@@ -431,7 +451,7 @@ function Main() {
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 select-none">
         <div className="flex flex-col items-center space-y-4 max-w-xs text-center">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-lg shadow-emerald-950/20 animate-pulse">
-            <BookOpen className="w-7 h-7 text-emerald-400" />
+            <Film className="w-7 h-7 text-emerald-400" />
           </div>
           <div className="space-y-1">
             <h1 className="text-base font-bold text-white tracking-wide">Já Vi Esse Filme</h1>
@@ -446,61 +466,46 @@ function Main() {
   }
 
   if (!isAuthenticated) {
-    if (route.kind === 'not_found') {
-      return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
-          <div className="my-auto">
-            <NotFoundPage
-              path={route.path}
-              isAuthenticated={false}
-              onGoHome={() => handleSelectTab('library')}
-            />
-          </div>
-          <Footer />
-        </div>
-      )
-    }
-
-    if (connectionError) {
-      return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-4">
-          <div className="my-auto max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-5">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <WifiOff className="w-7 h-7" />
+    return (
+      <div className="relative">
+        {connectionError && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-slate-900/95 backdrop-blur px-4 py-3 text-xs text-amber-200 shadow-2xl">
+            <div className="flex items-center space-x-2">
+              <WifiOff className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>{connectionError}</span>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-lg font-bold text-white">Servidor demorou para responder</h1>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                O servidor pode estar saindo do modo de espera. Você pode tentar reconectar sua sessão sem precisar fazer login novamente.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2.5 justify-center">
+            <div className="flex items-center space-x-2 shrink-0">
               <button
                 type="button"
                 onClick={() => refreshUser()}
-                className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition cursor-pointer"
+                disabled={isReconnecting}
+                className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 font-semibold transition cursor-pointer disabled:opacity-50"
               >
-                <RefreshCw className="w-4 h-4" />
-                <span>Tentar novamente</span>
+                {isReconnecting ? 'Tentando...' : 'Reconectar'}
               </button>
               <button
                 type="button"
-                onClick={dismissConnectionError}
-                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm border border-slate-700 transition cursor-pointer"
+                onClick={() => dismissConnectionError()}
+                className="text-slate-400 hover:text-slate-200 cursor-pointer p-0.5"
+                title="Fechar aviso"
               >
-                Ir para o login
+                ✕
               </button>
             </div>
           </div>
-          <Footer />
-        </div>
-      )
-    }
-
-    return <AuthPage />
+        )}
+        <AuthPage />
+      </div>
+    )
   }
 
-  return <MainLayout route={route} onSelectTab={handleSelectTab} />
+  return (
+    <AuthenticatedApp
+      currentTab={route.kind === 'tab' ? route.tab : 'catalog'}
+      onSelectTab={handleSelectTab}
+      route={route}
+    />
+  )
 }
 
 export function App() {

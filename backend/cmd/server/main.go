@@ -11,10 +11,10 @@ import (
 func main() {
 	// 1. Configurações
 	cfg := config.Load()
-	if cfg.GoogleBooksAPIKey != "" {
-		log.Println("[CONFIG] Provedor Google Books: ATIVADO (chave GOOGLE_BOOKS_API_KEY encontrada)")
+	if cfg.TmdbAPIKey != "" {
+		log.Println("[CONFIG] Provedor TMDB: ATIVADO (chave TMDB_API_KEY configurada)")
 	} else {
-		log.Println("[CONFIG][AVISO] GOOGLE_BOOKS_API_KEY NÃO CONFIGURADA! Requisições ao Google Books serão não-autenticadas e podem sofrer bloqueio por cota (HTTP 429). Defina a variável GOOGLE_BOOKS_API_KEY no seu .env ou nas variáveis do host.")
+		log.Println("[CONFIG][AVISO] TMDB_API_KEY não configurada. A busca de filmes e séries funcionará em modo fallback local.")
 	}
 
 	// 2. Banco de dados (com suporte a SQLite e PostgreSQL + Foreign Keys ativadas)

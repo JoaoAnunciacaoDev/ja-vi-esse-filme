@@ -37,12 +37,12 @@ func getVapidSubject() string {
 	}
 	sub := strings.TrimSpace(os.Getenv("VAPID_SUBJECT"))
 	if sub == "" {
-		return "mailto:suporte@silverfish.app"
+		return "mailto:suporte@javiessefilme.app"
 	}
 	return sub
 }
 
-const DefaultNotificationURL = "/?tab=library"
+const DefaultNotificationURL = "/?tab=watchlist"
 
 type WebPushPayload struct {
 	Title string `json:"title"`
@@ -418,11 +418,11 @@ func CronRemindersHandler(c *gin.Context) {
 			continue
 		}
 
-		// Verifica se o usuário já realizou leitura hoje no seu timezone
-		var sessionsToday int64
-		_ = db.Model(&schemas.ReadingSession{}).Where("user_id = ? AND read_at = ?", user.ID, userToday).Count(&sessionsToday).Error
-		if sessionsToday > 0 {
-			// Já leu hoje! Marca como resolvido hoje para não notificar de novo
+		// Verifica se o usuário já registrou algo hoje no seu timezone
+		var logsToday int64
+		_ = db.Model(&schemas.WatchLog{}).Where("user_id = ? AND watched_at = ?", user.ID, userToday).Count(&logsToday).Error
+		if logsToday > 0 {
+			// Já registrou hoje! Marca como resolvido hoje para não notificar de novo
 			s.LastReminderDate = userToday
 			s.UpdatedAt = time.Now()
 			_ = db.Save(&s).Error
@@ -437,18 +437,8 @@ func CronRemindersHandler(c *gin.Context) {
 			continue
 		}
 
-		// Monta mensagem motivacional personalizada com detecção real de ofensiva ativa
-		var historyList []schemas.GoalHistory
-		_ = db.Where("user_id = ?", user.ID).Order("date asc").Find(&historyList).Error
-		currentStreak, _ := calculateStreaks(historyList, userToday)
-
-		title := "Hora da leitura! 📖"
-		body := fmt.Sprintf("Olá, %s! Que tal ler algumas páginas agora para manter seu hábito literário?", user.DisplayName)
-
-		if s.StreakAlertEnabled && currentStreak > 0 {
-			title = fmt.Sprintf("Não perca sua ofensiva de %d dias! 🔥", currentStreak)
-			body = fmt.Sprintf("Olá, %s! Sua sequência de %d dias está em risco hoje. Leia agora para mantê-la viva! 🔥", user.DisplayName, currentStreak)
-		}
+		title := "Hora do cineminha! 🎬🍿"
+		body := fmt.Sprintf("Olá, %s! Já escolheu o filme ou episódio de hoje? Registre suas impressões no Já Vi Esse Filme!", user.DisplayName)
 
 		payload := WebPushPayload{
 			Title: title,

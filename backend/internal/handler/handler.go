@@ -14,7 +14,7 @@ var (
 	cfg *config.Config
 )
 
-const SessionCookieName = "silverfish_session"
+const SessionCookieName = "javiessefilme_session"
 
 func InitializeHandler(database *gorm.DB, configuration *config.Config) {
 	db = database

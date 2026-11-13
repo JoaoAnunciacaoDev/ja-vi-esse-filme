@@ -1,16 +1,13 @@
 import type { User } from './auth'
-import type { Book } from './book'
-import type { UserBook } from './library'
-import type { AchievementView } from './achievements'
+import type { MediaItem, UserMedia, WatchLog } from './media'
 
 export type ActivityType =
-  | 'BOOK_STARTED'
-  | 'BOOK_FINISHED'
-  | 'GOAL_MET'
-  | 'STREAK_MILESTONE'
-  | 'READING_SESSION'
+  | 'WATCHED_MOVIE'
+  | 'WATCHED_EPISODE'
+  | 'WATCHED_SEASON'
+  | 'ADDED_TO_WATCHLIST'
+  | 'RATED_MEDIA'
   | 'REVIEW_POSTED'
-  | 'ACHIEVEMENT_UNLOCKED'
   | 'PATCH_NOTE_PUBLISHED'
 
 export interface ActivityLiker {
@@ -34,11 +31,13 @@ export interface ActivityItem {
   id: string
   user_id: string
   type: ActivityType
-  book_id?: string
+  media_id?: string
+  watch_log_id?: string
   metadata?: string
   created_at: string
   user: User
-  book?: Book
+  media?: MediaItem
+  watch_log?: WatchLog
   likes_count?: number
   has_liked?: boolean
   comments_count?: number
@@ -46,23 +45,22 @@ export interface ActivityItem {
 }
 
 export interface ActivityMetadata {
-  pages_read?: number
-  start_page?: number
-  end_page?: number
-  book_title?: string
-  date?: string
-  target?: number
-  streak?: number
+  media_title?: string
+  poster_url?: string
+  media_type?: string
+  season_number?: number
+  episode_number?: number
+  platform?: string
+  is_rewatch?: boolean
   rating?: number
-  comment?: string
-  code?: string
-  title?: string
-  description?: string
-  icon?: string
-  tier?: string
+  review?: string
+  status?: string
   version?: string
+  title?: string
   summary?: string
 }
+
+export type LeaderboardCriterion = 'watched' | 'movies' | 'episodes' | 'reviews'
 
 export interface LeaderboardEntry {
   rank: number
@@ -89,18 +87,12 @@ export interface UserProfile {
   can_view_full: boolean
   created_at: string
   stats?: {
-    total_pages_read: number
-    total_books_read: number
-    current_streak: number
-    best_streak: number
+    total_movies_watched: number
+    total_episodes_watched: number
+    total_reviews: number
+    avg_rating: number
   }
-  achievements?: Array<{
-    id: string
-    achievement_code: string
-    unlocked_at: string
-    achievement: AchievementView
-  }>
-  library?: UserBook[]
+  library?: UserMedia[]
 }
 
 export interface UserPrivacySettings {
