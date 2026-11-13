@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getAdminDashboardStats, listAdminUsers, updateUserRole } from '@/api/admin'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import {
   adminListAllPatchNotes,
   adminCreatePatchNote,
@@ -52,6 +53,19 @@ export function AdminPage() {
   const [isSubmittingNote, setIsSubmittingNote] = useState(false)
   const [noteFeedback, setNoteFeedback] = useState<string | null>(null)
   const [adminToast, setAdminToast] = useState<string | null>(null)
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean
+    title: string
+    description: string
+    confirmText?: string
+    variant?: 'danger' | 'warning' | 'primary'
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+  })
 
   const showAdminToast = (msg: string) => {
     setAdminToast(msg)
@@ -104,19 +118,27 @@ export function AdminPage() {
     if (activeTab === 'patchNotes') loadPatchNotes()
   }, [activeTab, loadOverview, loadUsers, loadPatchNotes])
 
-  const handleToggleRole = async (userId: string, currentRole: 'USER' | 'SUPERUSER') => {
+  const handleToggleRole = (userId: string, currentRole: 'USER' | 'SUPERUSER') => {
     const nextRole = currentRole === 'SUPERUSER' ? 'USER' : 'SUPERUSER'
-    if (!confirm(`Deseja alterar o papel deste usuário para ${nextRole}?`)) return
-
-    try {
-      await updateUserRole(userId, nextRole)
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: nextRole } : u))
-      )
-      showAdminToast(`Papel do usuário atualizado para ${nextRole}`)
-    } catch (err: any) {
-      showAdminToast(err.message || 'Erro ao alterar papel do usuário')
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Alterar Nível de Permissão',
+      description: `Deseja realmente alterar o papel deste usuário de "${currentRole}" para "${nextRole}"?`,
+      confirmText: 'Alterar Papel',
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        try {
+          await updateUserRole(userId, nextRole)
+          setUsers((prev) =>
+            prev.map((u) => (u.id === userId ? { ...u, role: nextRole } : u))
+          )
+          showAdminToast(`Papel do usuário atualizado para ${nextRole}`)
+        } catch (err: any) {
+          showAdminToast(err.message || 'Erro ao alterar papel do usuário')
+        }
+      },
+    })
   }
 
   const handleCreatePatchNote = async (e: React.FormEvent) => {
@@ -165,20 +187,38 @@ export function AdminPage() {
     }
   }
 
-  const handleDeleteNote = async (id: string) => {
-    if (!confirm('Tem certeza de que deseja excluir esta nota de versão?')) return
-
-    try {
-      await adminDeletePatchNote(id)
-      setPatchNotes((prev) => prev.filter((n) => n.id !== id))
-      showAdminToast('Nota de versão excluída com sucesso')
-    } catch (err: any) {
-      showAdminToast(err.message || 'Erro ao excluir nota')
-    }
+  const handleDeleteNote = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Nota de Versão',
+      description: 'Tem certeza de que deseja excluir permanentemente esta nota de atualização?',
+      confirmText: 'Excluir',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        try {
+          await adminDeletePatchNote(id)
+          setPatchNotes((prev) => prev.filter((n) => n.id !== id))
+          showAdminToast('Nota de versão excluída com sucesso')
+        } catch (err: any) {
+          showAdminToast(err.message || 'Erro ao excluir nota')
+        }
+      },
+    })
   }
 
   return (
     <div className="space-y-6">
+      {/* Modal Reutilizável de Confirmação no Admin */}
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
+      />
       {/* Toast Feedback */}
       {adminToast && (
         <div className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-4">

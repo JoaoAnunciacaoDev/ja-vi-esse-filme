@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchLogsApi } from '@/api/watchLogs'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { WatchLog, MediaItem } from '@/types/media'
 import { Film, Tv, Star, Calendar, Plus, Trash2, Repeat, Loader2, Sparkles, AlertTriangle } from 'lucide-react'
 
@@ -12,6 +13,7 @@ interface DiaryPageProps {
 export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProps) {
   const queryClient = useQueryClient()
   const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({})
+  const [logToDelete, setLogToDelete] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['watch-logs'],
@@ -40,6 +42,24 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
 
   return (
     <div className="space-y-6">
+      {/* Modal Reutilizável de Confirmação para Exclusão do Diário */}
+      <ConfirmModal
+        isOpen={Boolean(logToDelete)}
+        onClose={() => setLogToDelete(null)}
+        onConfirm={() => {
+          if (logToDelete) {
+            deleteMutation.mutate(logToDelete)
+            setLogToDelete(null)
+          }
+        }}
+        title="Excluir Registro do Diário"
+        description="Tem certeza de que deseja excluir este registro de sessão do seu diário? Esta ação não poderá ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -212,11 +232,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
                   {/* Ações */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/60">
                     <button
-                      onClick={() => {
-                        if (confirm('Excluir este registro de visualização?')) {
-                          deleteMutation.mutate(log.id)
-                        }
-                      }}
+                      onClick={() => setLogToDelete(log.id)}
                       title="Excluir do diário"
                       className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
                     >

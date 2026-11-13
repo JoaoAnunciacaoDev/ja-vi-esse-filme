@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchlistApi } from '@/api/watchlist'
 import { MediaDetailsModal } from '@/features/media/MediaDetailsModal'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { WatchStatus, MediaItem, UserMedia } from '@/types/media'
 import {
   Bookmark,
@@ -27,6 +28,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
   const [activeTab, setActiveTab] = useState<WatchStatus | 'favorites'>('watching')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [selectedUserMedia, setSelectedUserMedia] = useState<UserMedia | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<UserMedia | null>(null)
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -64,7 +66,13 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => watchlistApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
+      showToast('Título removido da sua videoteca com sucesso!')
+    },
+    onError: (err: any) => {
+      showToast(err?.message || 'Erro ao remover título')
+    },
   })
 
   const allItems = data?.items || []
@@ -116,6 +124,24 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
             onOpenLogModal(selectedUserMedia.media)
           }
         }}
+      />
+
+      {/* Modal Reutilizável de Confirmação para Remoção */}
+      <ConfirmModal
+        isOpen={Boolean(itemToDelete)}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => {
+          if (itemToDelete) {
+            deleteMutation.mutate(itemToDelete.id)
+            setItemToDelete(null)
+          }
+        }}
+        title="Remover da Videoteca"
+        description={`Deseja remover "${itemToDelete?.media?.title || 'este título'}" da sua videoteca? Seus registros e avaliações no diário continuarão salvos.`}
+        confirmText="Remover da lista"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
       />
 
       {/* Header */}
@@ -335,10 +361,9 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                       </select>
 
                       <button
-                        onClick={() => {
-                          if (confirm(`Remover "${media.title}" da sua videoteca?`)) {
-                            deleteMutation.mutate(item.id)
-                          }
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setItemToDelete(item)
                         }}
                         title="Remover da lista"
                         className="p-1.5 rounded-xl bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer shrink-0"
