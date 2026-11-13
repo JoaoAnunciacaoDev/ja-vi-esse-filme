@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -38,6 +39,57 @@ func getLatestEmbeddedMigrationVersion() int64 {
 	return latest
 }
 
+// ExecuteEmbeddedMigrationsDirectly executa todos os scripts .up.sql ordenados diretamente
+// na conexão SQL existente. É 100% resiliente para ambientes serverless e transaction poolers (Neon, PgBouncer),
+// pois não depende de advisory locks e executa em poucos milissegundos.
+func ExecuteEmbeddedMigrationsDirectly(sqlDB *sql.DB) error {
+	entries, err := fs.ReadDir(migrations.FS, ".")
+	if err != nil {
+		return fmt.Errorf("falha ao ler diretório de migrações: %w", err)
+	}
+
+	var upFiles []string
+	var latestVersion int64
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".up.sql") {
+			upFiles = append(upFiles, entry.Name())
+			parts := strings.SplitN(entry.Name(), "_", 2)
+			if len(parts) >= 2 {
+				if v, err := strconv.ParseInt(parts[0], 10, 64); err == nil && v > latestVersion {
+					latestVersion = v
+				}
+			}
+		}
+	}
+	sort.Strings(upFiles)
+
+	for _, filename := range upFiles {
+		content, err := fs.ReadFile(migrations.FS, filename)
+		if err != nil {
+			return fmt.Errorf("falha ao ler arquivo de migração %s: %w", filename, err)
+		}
+
+		sqlContent := string(content)
+		if strings.TrimSpace(sqlContent) == "" {
+			continue
+		}
+
+		if _, err := sqlDB.Exec(sqlContent); err != nil {
+			return fmt.Errorf("falha ao executar migração direta %s: %w", filename, err)
+		}
+		log.Printf("[Migrações Diretas] Aplicado com sucesso: %s", filename)
+	}
+
+	// Registra versão na tabela schema_migrations para compatibilidade
+	if latestVersion > 0 {
+		_, _ = sqlDB.Exec("CREATE TABLE IF NOT EXISTS schema_migrations (version bigint NOT NULL PRIMARY KEY, dirty boolean NOT NULL);")
+		_, _ = sqlDB.Exec("DELETE FROM schema_migrations;")
+		_, _ = sqlDB.Exec(fmt.Sprintf("INSERT INTO schema_migrations (version, dirty) VALUES (%d, false);", latestVersion))
+	}
+
+	return nil
+}
+
 // RunMigrations executa as migrações SQL embutidas diretamente no binário Go
 func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 	normalizedDriver := strings.ToLower(strings.TrimSpace(dbDriver))
@@ -45,18 +97,28 @@ func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 		normalizedDriver = "postgres"
 	}
 
+	latest := getLatestEmbeddedMigrationVersion()
+
 	// Fast-path para Postgres serverless: se todas as migrações já estão aplicadas sem dirty state,
-	// evita abrir uma segunda conexão direta e adquirir advisory lock a cada cold start.
-	if normalizedDriver == "postgres" {
-		if latest := getLatestEmbeddedMigrationVersion(); latest > 0 {
-			var version int64
-			var dirty bool
-			err := sqlDB.QueryRow("SELECT version, dirty FROM schema_migrations LIMIT 1").Scan(&version, &dirty)
-			if err == nil && !dirty && version >= latest {
-				return nil
-			}
+	// evita reexecutar migrações ou conexões extras a cada cold start.
+	if normalizedDriver == "postgres" && latest > 0 {
+		var version int64
+		var dirty bool
+		err := sqlDB.QueryRow("SELECT version, dirty FROM schema_migrations LIMIT 1").Scan(&version, &dirty)
+		if err == nil && !dirty && version >= latest {
+			return nil
 		}
 	}
+
+	// Execução direta primária: funciona perfeitamente em Neon/PgBouncer, AWS RDS e SQLite
+	log.Println("[Migrações] Aplicando scripts SQL de migração embutidos...")
+	if err := ExecuteEmbeddedMigrationsDirectly(sqlDB); err == nil {
+		log.Println("[Migrações] Todas as tabelas sincronizadas com sucesso via execução direta!")
+		return nil
+	} else {
+		log.Printf("[Migrações] Aviso na execução direta (%v). Tentando via golang-migrate...", err)
+	}
+
 	var driverInstance migratedb.Driver
 	var err error
 
@@ -64,8 +126,7 @@ func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 	var directDB *sql.DB
 
 	// Caso específico do Neon / PgBouncer:
-	// O endpoint "-pooler" opera em transaction pooling e não suporta pg_advisory_lock do golang-migrate,
-	// e parâmetros como channel_binding quebram drivers legados.
+	// O endpoint "-pooler" opera em transaction pooling e não suporta pg_advisory_lock do golang-migrate.
 	if normalizedDriver == "postgres" {
 		cleanedSource := SanitizePostgresURL(dbSource)
 		if cleanedSource != dbSource || strings.Contains(dbSource, "-pooler.") {

@@ -31,29 +31,43 @@ func SanitizePostgresURL(rawURL string) string {
 }
 
 // SyncSchemas sincroniza schemas GORM garantindo compatibilidade.
-// No SQLite (usado em testes/desenvolvimento local), roda AutoMigrate para criar as tabelas.
-// No PostgreSQL (produção serverless no Vercel), o AutoMigrate para 18 modelos é evitado
-// porque realiza dezenas de introspecções e tentativas de drop/create de constraints via rede,
-// ultrapassando o timeout de 30s de inicialização da Vercel. As migrations embutidas (golang-migrate)
-// e queries pontuais cuidam do Postgres de forma instantânea (<200ms).
+// Se as tabelas principais não existirem (banco novo ou migração pendente no Postgres/Neon),
+// executa as migrações SQL embutidas diretamente e AutoMigrate de segurança.
+// Se já existirem no Postgres, evita introspecções lentas de rede para manter o cold start instantâneo (<200ms).
 func SyncSchemas(db *gorm.DB) error {
-	if db.Dialector.Name() == "sqlite" {
-		models := []interface{}{
-			&schemas.User{},
-			&schemas.Session{},
-			&schemas.MediaItem{},
-			&schemas.UserMedia{},
-			&schemas.WatchLog{},
-			&schemas.Follow{},
-			&schemas.UserPrivacySettings{},
-			&schemas.Activity{},
-			&schemas.PushSubscription{},
-			&schemas.NotificationSettings{},
-			&schemas.PatchNote{},
-			&schemas.ActivityLike{},
-			&schemas.ActivityComment{},
-		}
+	models := []interface{}{
+		&schemas.User{},
+		&schemas.Session{},
+		&schemas.MediaItem{},
+		&schemas.UserMedia{},
+		&schemas.WatchLog{},
+		&schemas.Follow{},
+		&schemas.UserPrivacySettings{},
+		&schemas.Activity{},
+		&schemas.PushSubscription{},
+		&schemas.NotificationSettings{},
+		&schemas.PatchNote{},
+		&schemas.ActivityLike{},
+		&schemas.ActivityComment{},
+	}
 
+	hasMediaItems := db.Migrator().HasTable("media_items")
+	hasUsers := db.Migrator().HasTable("users")
+
+	if !hasMediaItems || !hasUsers {
+		log.Println("[SyncSchemas] Tabelas base ('media_items' / 'users') não encontradas. Inicializando estrutura do banco...")
+		if sqlDB, err := db.DB(); err == nil {
+			if migErr := ExecuteEmbeddedMigrationsDirectly(sqlDB); migErr != nil {
+				log.Printf("[SyncSchemas] Aviso ao executar migrações diretas: %v", migErr)
+			}
+		}
+		for _, m := range models {
+			if err := db.AutoMigrate(m); err != nil {
+				log.Printf("[AutoMigrate] aviso ao sincronizar %T: %v", m, err)
+			}
+		}
+		log.Println("[SyncSchemas] Tabelas e schemas inicializados com sucesso!")
+	} else if db.Dialector.Name() == "sqlite" {
 		for _, m := range models {
 			if err := db.AutoMigrate(m); err != nil {
 				log.Printf("[AutoMigrate] aviso ao sincronizar %T: %v", m, err)

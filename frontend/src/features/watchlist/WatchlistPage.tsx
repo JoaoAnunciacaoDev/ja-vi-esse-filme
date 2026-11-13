@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchlistApi } from '@/api/watchlist'
-import type { WatchStatus, MediaItem } from '@/types/media'
+import { MediaDetailsModal } from '@/features/media/MediaDetailsModal'
+import type { WatchStatus, MediaItem, UserMedia } from '@/types/media'
 import {
   Bookmark,
   Tv,
@@ -25,6 +26,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<WatchStatus | 'favorites'>('watching')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const [selectedUserMedia, setSelectedUserMedia] = useState<UserMedia | null>(null)
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -88,6 +90,33 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
           <span>{toastMsg}</span>
         </div>
       )}
+
+      {/* Modal de Detalhes da Obra */}
+      <MediaDetailsModal
+        isOpen={Boolean(selectedUserMedia)}
+        onClose={() => setSelectedUserMedia(null)}
+        media={selectedUserMedia?.media || undefined}
+        userStatus={selectedUserMedia?.status}
+        isFavorite={selectedUserMedia?.favorite}
+        isUpdating={updateStatusMutation.isPending || toggleFavoriteMutation.isPending}
+        onUpdateStatus={(_, status) => {
+          if (selectedUserMedia) {
+            updateStatusMutation.mutate({ id: selectedUserMedia.id, status })
+            setSelectedUserMedia({ ...selectedUserMedia, status })
+          }
+        }}
+        onToggleFavorite={() => {
+          if (selectedUserMedia) {
+            toggleFavoriteMutation.mutate(selectedUserMedia.id)
+            setSelectedUserMedia({ ...selectedUserMedia, favorite: !selectedUserMedia.favorite })
+          }
+        }}
+        onLogWatch={() => {
+          if (selectedUserMedia?.media) {
+            onOpenLogModal(selectedUserMedia.media)
+          }
+        }}
+      />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -220,8 +249,12 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                 key={item.id}
                 className="group relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 transition flex flex-col shadow-lg"
               >
-                {/* Pôster */}
-                <div className="relative aspect-[2/3] w-full bg-slate-950 overflow-hidden">
+                {/* Pôster (Clicável para ver detalhes) */}
+                <div
+                  onClick={() => setSelectedUserMedia(item)}
+                  className="relative aspect-[2/3] w-full bg-slate-950 overflow-hidden cursor-pointer"
+                  title="Clique para ver detalhes da obra"
+                >
                   {media.poster_url ? (
                     <img
                       src={media.poster_url}
@@ -238,7 +271,11 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
                   {/* Favorito */}
                   <button
-                    onClick={() => toggleFavoriteMutation.mutate(item.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavoriteMutation.mutate(item.id)
+                    }}
+                    title={item.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                     className="absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md bg-slate-950/70 text-slate-400 hover:text-rose-400 transition cursor-pointer"
                   >
                     <Heart className={`w-3.5 h-3.5 ${item.favorite ? 'fill-rose-500 text-rose-500' : ''}`} />
@@ -254,7 +291,11 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
                 {/* Conteúdo */}
                 <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
-                  <div>
+                  <div
+                    onClick={() => setSelectedUserMedia(item)}
+                    className="cursor-pointer space-y-0.5"
+                    title="Clique para ver detalhes da obra"
+                  >
                     <h3 className="font-bold text-white text-xs line-clamp-1 group-hover:text-rose-400 transition" title={media.title}>
                       {media.title}
                     </h3>
@@ -263,8 +304,18 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                     ) : null}
                   </div>
 
-                  {/* Seletor rápido de Status no Card */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
+                  {/* Ações Alinhadas Verticalmente: Avaliar (topo) e Status/Lixeira (abaixo) */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-800/80 flex flex-col">
+                    {/* Botão Registrar Sessão com Detalhes */}
+                    <button
+                      onClick={() => onOpenLogModal(media)}
+                      title="Registrar experiência detalhada com nota e resenha"
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
+                    >
+                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                      <span>Avaliar</span>
+                    </button>
+
                     <div className="flex items-center gap-1">
                       <select
                         value={item.status}
@@ -274,7 +325,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                             status: e.target.value as WatchStatus,
                           })
                         }
-                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-rose-500 cursor-pointer"
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-[11px] font-semibold text-slate-300 focus:outline-none focus:border-rose-500 cursor-pointer"
                       >
                         <option value="watching">Assistindo</option>
                         <option value="plan_to_watch">Quero Ver</option>
@@ -290,21 +341,11 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                           }
                         }}
                         title="Remover da lista"
-                        className="p-1 rounded-lg bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
+                        className="p-1.5 rounded-xl bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer shrink-0"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-
-                    {/* Botão Registrar Sessão com Detalhes */}
-                    <button
-                      onClick={() => onOpenLogModal(media)}
-                      title="Registrar experiência detalhada com nota e resenha"
-                      className="w-full inline-flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-bold bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3 stroke-[2.5]" />
-                      <span>Avaliar / Registrar</span>
-                    </button>
                   </div>
                 </div>
               </div>

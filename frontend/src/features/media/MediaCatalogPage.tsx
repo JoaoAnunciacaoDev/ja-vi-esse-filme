@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { mediaApi } from '@/api/media'
 import { watchlistApi } from '@/api/watchlist'
 import { MediaCard } from './MediaCard'
+import { MediaDetailsModal } from './MediaDetailsModal'
 import type { MediaItem, ExternalMediaResult, WatchStatus } from '@/types/media'
 import { Search, Film, Tv, Sparkles, Plus, Loader2 } from 'lucide-react'
 
@@ -16,6 +17,9 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selectedType, setSelectedType] = useState<'' | 'movie' | 'tv'>('')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const [selectedMediaForDetails, setSelectedMediaForDetails] = useState<
+    MediaItem | ExternalMediaResult | null
+  >(null)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -40,11 +44,15 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
   // Mapeia media_id -> UserMedia e tmdb_id -> UserMedia
   const userMediaByMediaId = new Map<string, WatchStatus>()
   const userMediaByTmdbId = new Map<number, WatchStatus>()
+  const userFavoriteByMediaId = new Map<string, boolean>()
+  const userFavoriteByTmdbId = new Map<number, boolean>()
 
   for (const item of watchlistData?.items || []) {
     userMediaByMediaId.set(item.media_id, item.status)
+    userFavoriteByMediaId.set(item.media_id, item.favorite)
     if (item.media?.tmdb_id) {
       userMediaByTmdbId.set(item.media.tmdb_id, item.status)
+      userFavoriteByTmdbId.set(item.media.tmdb_id, item.favorite)
     }
   }
 
@@ -120,6 +128,83 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
     },
   })
 
+  // Mutação para favoritar / desfavoritar rapidamente
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (item: MediaItem | ExternalMediaResult) => {
+      const existingInWatchlist = watchlistData?.items?.find((i) => {
+        if ('id' in item && item.id && i.media_id === item.id) return true
+        if ('tmdb_id' in item && item.tmdb_id && i.media?.tmdb_id === item.tmdb_id) return true
+        return false
+      })
+
+      if (existingInWatchlist) {
+        return watchlistApi.toggleFavorite(existingInWatchlist.id)
+      }
+
+      // Se não estiver na lista, importa se necessário e adiciona com favorite = true
+      let mediaId = 'id' in item && typeof item.id === 'string' && item.id.length > 0 ? item.id : ''
+      if (!mediaId) {
+        const tmdbIdNum = 'tmdb_id' in item && typeof item.tmdb_id === 'number' && item.tmdb_id > 0 ? item.tmdb_id : undefined
+        const importRes = await mediaApi.import({
+          tmdb_id: tmdbIdNum,
+          type: item.type || 'movie',
+          title: item.title,
+          original_title: item.original_title || item.title,
+          overview: item.overview || '',
+          poster_url: item.poster_url || '',
+          backdrop_url: item.backdrop_url || '',
+          release_date: item.release_date || '',
+          year: item.year || 0,
+          genres: item.genres || '',
+        })
+        mediaId = importRes.media?.id || ''
+      }
+
+      if (!mediaId) {
+        throw new Error('Não foi possível identificar a mídia para favoritar.')
+      }
+
+      return watchlistApi.add({
+        media_id: mediaId,
+        status: 'plan_to_watch',
+        favorite: true,
+      })
+    },
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
+      const isFavNow = (res as any)?.favorite ?? true
+      setToastMsg(
+        isFavNow
+          ? `"${variables.title}" adicionado aos favoritos!`
+          : `"${variables.title}" removido dos favoritos!`
+      )
+      setTimeout(() => setToastMsg(null), 3000)
+    },
+    onError: (err: any) => {
+      console.error('Falha ao favoritar:', err)
+      let message = err?.message || 'Erro ao favoritar.'
+      if (err?.status === 401 || err?.message?.includes('401') || err?.message?.includes('não autorizado')) {
+        message = 'Você precisa estar conectado na sua conta para favoritar.'
+      }
+      setToastMsg(message)
+      setTimeout(() => setToastMsg(null), 4000)
+    },
+  })
+
+  // Detalhes do item selecionado no modal
+  let selectedStatus: WatchStatus | undefined
+  let selectedIsFavorite = false
+
+  if (selectedMediaForDetails) {
+    if ('id' in selectedMediaForDetails && selectedMediaForDetails.id && userMediaByMediaId.has(selectedMediaForDetails.id)) {
+      selectedStatus = userMediaByMediaId.get(selectedMediaForDetails.id)
+      selectedIsFavorite = Boolean(userFavoriteByMediaId.get(selectedMediaForDetails.id))
+    } else if ('tmdb_id' in selectedMediaForDetails && selectedMediaForDetails.tmdb_id && userMediaByTmdbId.has(selectedMediaForDetails.tmdb_id)) {
+      selectedStatus = userMediaByTmdbId.get(selectedMediaForDetails.tmdb_id)
+      selectedIsFavorite = Boolean(userFavoriteByTmdbId.get(selectedMediaForDetails.tmdb_id))
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Toast Feedback */}
@@ -129,6 +214,19 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
           <span>{toastMsg}</span>
         </div>
       )}
+
+      {/* Modal de Detalhes da Obra */}
+      <MediaDetailsModal
+        isOpen={Boolean(selectedMediaForDetails)}
+        onClose={() => setSelectedMediaForDetails(null)}
+        media={selectedMediaForDetails || undefined}
+        userStatus={selectedStatus}
+        isFavorite={selectedIsFavorite}
+        isUpdating={updateStatusMutation.isPending || toggleFavoriteMutation.isPending}
+        onUpdateStatus={(m, s) => updateStatusMutation.mutate({ item: m, status: s })}
+        onToggleFavorite={(m) => toggleFavoriteMutation.mutate(m)}
+        onLogWatch={(m) => onOpenLogModal(m)}
+      />
 
       {/* Hero / Header de Busca */}
       <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
@@ -220,11 +318,14 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {data.results.map((item, idx) => {
               let currentStatus: WatchStatus | undefined
+              let isFav = false
 
               if ('id' in item && typeof item.id === 'string' && userMediaByMediaId.has(item.id)) {
                 currentStatus = userMediaByMediaId.get(item.id)
+                isFav = Boolean(userFavoriteByMediaId.get(item.id))
               } else if ('tmdb_id' in item && typeof item.tmdb_id === 'number' && userMediaByTmdbId.has(item.tmdb_id)) {
                 currentStatus = userMediaByTmdbId.get(item.tmdb_id)
+                isFav = Boolean(userFavoriteByTmdbId.get(item.tmdb_id))
               }
 
               const cardKey = 'id' in item && item.id ? String(item.id) : `tmdb-${item.tmdb_id || idx}-${item.title}`
@@ -241,9 +342,12 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
                   key={cardKey}
                   media={item}
                   userStatus={currentStatus}
+                  isFavorite={isFav}
                   isUpdating={isItemUpdating}
                   onUpdateStatus={(m, s) => updateStatusMutation.mutate({ item: m, status: s })}
+                  onToggleFavorite={(m) => toggleFavoriteMutation.mutate(m)}
                   onLogWatch={(m) => onOpenLogModal(m)}
+                  onOpenDetails={(m) => setSelectedMediaForDetails(m)}
                 />
               )
             })}
