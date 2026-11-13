@@ -76,7 +76,7 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 	switch cfg.DBDriver {
 	case "sqlite":
 		dialector = sqlite.Open(cfg.DBSource)
-	case "postgres":
+	case "postgres", "postgresql":
 		// Preserva -pooler. e desabilita prepared statements para compatibilidade com PgBouncer/Neon pooler
 		poolerSource := SanitizePostgresPoolerURL(cfg.DBSource)
 		dialector = postgres.New(postgres.Config{

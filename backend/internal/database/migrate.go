@@ -40,9 +40,14 @@ func getLatestEmbeddedMigrationVersion() int64 {
 
 // RunMigrations executa as migrações SQL embutidas diretamente no binário Go
 func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
+	normalizedDriver := strings.ToLower(strings.TrimSpace(dbDriver))
+	if normalizedDriver == "postgresql" {
+		normalizedDriver = "postgres"
+	}
+
 	// Fast-path para Postgres serverless: se todas as migrações já estão aplicadas sem dirty state,
 	// evita abrir uma segunda conexão direta e adquirir advisory lock a cada cold start.
-	if dbDriver == "postgres" {
+	if normalizedDriver == "postgres" {
 		if latest := getLatestEmbeddedMigrationVersion(); latest > 0 {
 			var version int64
 			var dirty bool
@@ -61,7 +66,7 @@ func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 	// Caso específico do Neon / PgBouncer:
 	// O endpoint "-pooler" opera em transaction pooling e não suporta pg_advisory_lock do golang-migrate,
 	// e parâmetros como channel_binding quebram drivers legados.
-	if dbDriver == "postgres" {
+	if normalizedDriver == "postgres" {
 		cleanedSource := SanitizePostgresURL(dbSource)
 		if cleanedSource != dbSource || strings.Contains(dbSource, "-pooler.") {
 			directDB, err = sql.Open("postgres", cleanedSource)
@@ -73,7 +78,7 @@ func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 		}
 	}
 
-	switch dbDriver {
+	switch normalizedDriver {
 	case "sqlite":
 		driverInstance, err = sqlite3.WithInstance(targetDB, &sqlite3.Config{})
 	case "postgres":
@@ -94,7 +99,7 @@ func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 	m, err := migrate.NewWithInstance(
 		"iofs",
 		sourceDriver,
-		dbDriver,
+		normalizedDriver,
 		driverInstance,
 	)
 	if err != nil {

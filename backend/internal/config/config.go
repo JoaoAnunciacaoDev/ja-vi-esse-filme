@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -36,17 +37,22 @@ func Load() *Config {
 		log.Println("Aviso: nenhum arquivo .env encontrado, lendo variáveis do sistema.")
 	}
 
+	rawDriver := strings.ToLower(strings.TrimSpace(getEnv("DB_DRIVER", "sqlite")))
+	if rawDriver == "postgresql" {
+		rawDriver = "postgres"
+	}
+
 	cfg := &Config{
 		Port:              getEnv("PORT", "8080"),
 		Env:               getEnv("ENV", "development"),
-		DBDriver:          getEnv("DB_DRIVER", "sqlite"),
-		DBSource:          getEnv("DB_SOURCE", "silverfish.db"),
-		SessionSecret:     getEnv("SESSION_SECRET", "silverfish-secret-key-12345"),
+		DBDriver:          rawDriver,
+		DBSource:          getEnv("DB_SOURCE", "javiessefilme.db"),
+		SessionSecret:     getEnv("SESSION_SECRET", "javiessefilme-secret-key-12345"),
 		FrontendURL:       getEnv("FRONTEND_URL", "http://localhost:5173"),
 		GoogleBooksAPIKey: getEnv("GOOGLE_BOOKS_API_KEY", ""),
 		VapidPublicKey:    getEnv("VAPID_PUBLIC_KEY", ""),
 		VapidPrivateKey:   getEnv("VAPID_PRIVATE_KEY", ""),
-		VapidSubject:      getEnv("VAPID_SUBJECT", "mailto:suporte@silverfish.app"),
+		VapidSubject:      getEnv("VAPID_SUBJECT", "mailto:suporte@javiessefilme.app"),
 		CronSecret:        getEnv("CRON_SECRET", ""),
 	}
 
