@@ -1,6 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
 import { statsApi } from '@/api/stats'
+import { formatDateDDMMYYYY } from '@/utils/date'
 import { Film, Tv, Star, Repeat, Calendar, BarChart3, Loader2 } from 'lucide-react'
+
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+function formatMonthLabel(ym: string) {
+  const parts = ym.split('-')
+  if (parts.length === 2) {
+    const monthIdx = parseInt(parts[1], 10) - 1
+    if (monthIdx >= 0 && monthIdx < 12) {
+      return `${MONTH_NAMES[monthIdx]}/${parts[0].slice(2)}`
+    }
+  }
+  return ym
+}
 
 export function DashboardPage() {
   const { data: stats, isLoading } = useQuery({
@@ -137,7 +151,7 @@ export function DashboardPage() {
                         style={{ height: `${heightPercent}%` }}
                       />
                     </div>
-                    <span className="text-[10px] font-medium text-slate-500">{m.month.slice(5)}</span>
+                    <span className="text-[10px] font-medium text-slate-500">{formatMonthLabel(m.month)}</span>
                   </div>
                 )
               })}
@@ -165,7 +179,7 @@ export function DashboardPage() {
             {heatmap.days.map((d) => (
               <div
                 key={d.date}
-                title={`${d.date}: ${d.count} sessões`}
+                title={`${formatDateDDMMYYYY(d.date)}: ${d.count} ${d.count === 1 ? 'sessão' : 'sessões'}`}
                 className={`w-3.5 h-3.5 rounded-sm transition ${
                   d.count >= 3
                     ? 'bg-rose-400'
