@@ -16,8 +16,11 @@ import (
 
 // CreateWatchLogHandler registra uma experiência assistida (filme ou episódio de série)
 func CreateWatchLogHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	var input schemas.CreateWatchLogInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -158,8 +161,11 @@ func CreateWatchLogHandler(c *gin.Context) {
 
 // ListWatchLogsHandler retorna o diário de visualizações do usuário
 func ListWatchLogsHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -201,8 +207,11 @@ func ListWatchLogsHandler(c *gin.Context) {
 
 // GetWatchLogSummaryHandler calcula métricas gerais do que o usuário já viu
 func GetWatchLogSummaryHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	var totalLogs int64
 	var totalMovies int64
@@ -227,8 +236,11 @@ func GetWatchLogSummaryHandler(c *gin.Context) {
 
 // UpdateWatchLogHandler edita um registro de visualização ou avaliação
 func UpdateWatchLogHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 	id := c.Param("id")
 
 	var item schemas.WatchLog
@@ -290,8 +302,11 @@ func UpdateWatchLogHandler(c *gin.Context) {
 
 // DeleteWatchLogHandler remove um registro de visualização
 func DeleteWatchLogHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 	id := c.Param("id")
 
 	res := db.Where("id = ? AND user_id = ?", id, userStr).Delete(&schemas.WatchLog{})

@@ -2,7 +2,25 @@ package handler
 
 import (
 	"time"
+
+	"github.com/JoaoAnunciacaoDev/ja-vi-esse-filme/backend/internal/schemas"
+	"github.com/gin-gonic/gin"
 )
+
+// getCurrentUserID extrai o ID do usuário de forma segura a partir do contexto Gin
+func getCurrentUserID(c *gin.Context) string {
+	if val, exists := c.Get("userID"); exists {
+		if id, ok := val.(string); ok && id != "" {
+			return id
+		}
+	}
+	if userVal, exists := c.Get("currentUser"); exists {
+		if u, ok := userVal.(*schemas.User); ok && u != nil {
+			return u.ID
+		}
+	}
+	return ""
+}
 
 // getTodayInTimezone retorna a data atual formatada como YYYY-MM-DD no timezone do usuário
 func getTodayInTimezone(tz string) string {

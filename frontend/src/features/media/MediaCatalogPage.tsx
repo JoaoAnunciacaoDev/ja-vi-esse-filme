@@ -57,26 +57,30 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       item: MediaItem | ExternalMediaResult
       status: WatchStatus
     }) => {
-      // 1. Se for ExternalMediaResult, garante que esteja importado no banco
-      let mediaId = 'id' in item ? item.id : ''
+      // 1. Se for ExternalMediaResult ou não tiver id persistido no banco, garante que esteja importado
+      let mediaId = 'id' in item && typeof item.id === 'string' ? item.id : ''
       if (!mediaId && 'tmdb_id' in item) {
         const importRes = await mediaApi.import({
           tmdb_id: item.tmdb_id,
-          type: item.type,
+          type: item.type || 'movie',
           title: item.title,
-          original_title: item.original_title,
-          overview: item.overview,
-          poster_url: item.poster_url,
-          backdrop_url: item.backdrop_url,
-          release_date: item.release_date,
-          year: item.year,
-          genres: item.genres,
+          original_title: item.original_title || item.title,
+          overview: item.overview || '',
+          poster_url: item.poster_url || '',
+          backdrop_url: item.backdrop_url || '',
+          release_date: item.release_date || '',
+          year: item.year || 0,
+          genres: item.genres || '',
         })
-        mediaId = importRes.media.id
+        mediaId = importRes.media?.id || ''
+      }
+
+      if (!mediaId) {
+        throw new Error('Não foi possível identificar a mídia para salvar.')
       }
 
       // 2. Se já existe na lista do usuário, atualiza; senão adiciona
-      const existing = watchlistData?.items.find((i) => i.media_id === mediaId)
+      const existing = watchlistData?.items?.find((i) => i.media_id === mediaId)
       if (existing) {
         return watchlistApi.update(existing.id, { status })
       } else {
@@ -97,6 +101,15 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       }
       setToastMsg(`Status alterado para "${statusLabels[variables.status]}"!`)
       setTimeout(() => setToastMsg(null), 3000)
+    },
+    onError: (err: any) => {
+      console.error('Falha ao atualizar status:', err)
+      let message = err?.message || 'Erro ao alterar status.'
+      if (err?.status === 401 || err?.message?.includes('401') || err?.message?.includes('não autorizado')) {
+        message = 'Você precisa estar conectado na sua conta para salvar filmes.'
+      }
+      setToastMsg(message)
+      setTimeout(() => setToastMsg(null), 4000)
     },
   })
 
@@ -209,11 +222,19 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
 
               const cardKey = 'id' in item && item.id ? String(item.id) : `tmdb-${item.tmdb_id || idx}-${item.title}`
 
+              const isItemUpdating =
+                updateStatusMutation.isPending &&
+                (updateStatusMutation.variables?.item === item ||
+                  ('tmdb_id' in item &&
+                    Boolean(item.tmdb_id) &&
+                    (updateStatusMutation.variables?.item as any)?.tmdb_id === item.tmdb_id))
+
               return (
                 <MediaCard
                   key={cardKey}
                   media={item}
                   userStatus={currentStatus}
+                  isUpdating={isItemUpdating}
                   onUpdateStatus={(m, s) => updateStatusMutation.mutate({ item: m, status: s })}
                   onLogWatch={(m) => onOpenLogModal(m)}
                 />

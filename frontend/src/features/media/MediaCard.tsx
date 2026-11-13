@@ -11,11 +11,13 @@ import {
   Pause,
   XCircle,
   ChevronDown,
+  Loader2,
 } from 'lucide-react'
 
 interface MediaCardProps {
   media: MediaItem | ExternalMediaResult
   userStatus?: WatchStatus
+  isUpdating?: boolean
   onUpdateStatus?: (media: MediaItem | ExternalMediaResult, status: WatchStatus) => void
   onLogWatch?: (media: MediaItem | ExternalMediaResult) => void
 }
@@ -59,6 +61,7 @@ const STATUS_CONFIG: Record<
 export function MediaCard({
   media,
   userStatus,
+  isUpdating = false,
   onUpdateStatus,
   onLogWatch,
 }: MediaCardProps) {
@@ -157,15 +160,25 @@ export function MediaCard({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  disabled={isUpdating}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsMenuOpen(!isMenuOpen)
+                  }}
                   title="Alterar status de acompanhamento"
                   className={`inline-flex items-center gap-1 py-2 px-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                    userStatus
+                    isUpdating
+                      ? 'opacity-60 cursor-not-allowed bg-slate-900 border-slate-800 text-slate-400'
+                      : userStatus
                       ? 'bg-slate-800 border-slate-700 text-white'
                       : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                   }`}
                 >
-                  <span>{currentStatusConfig ? currentStatusConfig.label : 'Status'}</span>
+                  {isUpdating ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                  ) : (
+                    <span>{currentStatusConfig ? currentStatusConfig.label : 'Status'}</span>
+                  )}
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </button>
 
@@ -173,7 +186,10 @@ export function MediaCard({
                   <>
                     <div
                       className="fixed inset-0 z-40"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsMenuOpen(false)
+                      }}
                     />
                     <div className="absolute right-0 bottom-full mb-2 w-44 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-1.5 z-50 space-y-0.5 divide-y divide-slate-800/50">
                       <div className="pb-1">
@@ -184,7 +200,8 @@ export function MediaCard({
                       <div className="pt-1 space-y-0.5">
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             onUpdateStatus(media, 'watching')
                             setIsMenuOpen(false)
                           }}
@@ -200,7 +217,8 @@ export function MediaCard({
 
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             onUpdateStatus(media, 'plan_to_watch')
                             setIsMenuOpen(false)
                           }}
@@ -216,7 +234,8 @@ export function MediaCard({
 
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             onUpdateStatus(media, 'completed')
                             setIsMenuOpen(false)
                           }}
@@ -232,7 +251,8 @@ export function MediaCard({
 
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             onUpdateStatus(media, 'paused')
                             setIsMenuOpen(false)
                           }}
@@ -248,7 +268,8 @@ export function MediaCard({
 
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             onUpdateStatus(media, 'dropped')
                             setIsMenuOpen(false)
                           }}

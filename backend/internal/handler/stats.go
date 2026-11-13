@@ -25,8 +25,11 @@ type HeatmapDay struct {
 
 // GetDashboardStatsHandler calcula estatísticas agregadas de filmes e séries do usuário
 func GetDashboardStatsHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	now := time.Now()
 	currentYear := now.Format("2006")
@@ -127,8 +130,11 @@ func GetDashboardStatsHandler(c *gin.Context) {
 
 // GetHeatmapHandler retorna os dias com registros de visualização no último ano
 func GetHeatmapHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	oneYearAgo := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 

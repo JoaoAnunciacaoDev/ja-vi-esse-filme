@@ -13,6 +13,7 @@ import {
   Play,
   Pause,
   XCircle,
+  Sparkles,
 } from 'lucide-react'
 
 interface WatchlistPageProps {
@@ -23,6 +24,12 @@ interface WatchlistPageProps {
 export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: WatchlistPageProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<WatchStatus | 'favorites'>('watching')
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 3000)
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['watchlist'],
@@ -32,7 +39,20 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: WatchStatus }) =>
       watchlistApi.update(id, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
+      const statusLabels: Record<WatchStatus, string> = {
+        plan_to_watch: 'Quero Ver',
+        watching: 'Assistindo',
+        completed: 'Já Vi (Concluído)',
+        paused: 'Pausado',
+        dropped: 'Abandonado',
+      }
+      showToast(`Movido para "${statusLabels[variables.status]}"!`)
+    },
+    onError: (err: any) => {
+      showToast(err?.message || 'Erro ao alterar status')
+    },
   })
 
   const toggleFavoriteMutation = useMutation({
@@ -61,6 +81,14 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
   return (
     <div className="space-y-6">
+      {/* Toast Feedback */}
+      {toastMsg && (
+        <div className="fixed top-4 right-4 z-50 bg-rose-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-xl animate-fade-in flex items-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

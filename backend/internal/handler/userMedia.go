@@ -14,8 +14,11 @@ import (
 
 // ListUserMediaHandler lista as mídias da lista do usuário logado
 func ListUserMediaHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	status := c.Query("status")
 	favoritesOnly := c.Query("favorite") == "true"
@@ -39,8 +42,11 @@ func ListUserMediaHandler(c *gin.Context) {
 
 // AddToUserMediaHandler adiciona um filme ou série à lista pessoal do usuário
 func AddToUserMediaHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 
 	var input schemas.AddToUserMediaInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -137,8 +143,11 @@ func AddToUserMediaHandler(c *gin.Context) {
 
 // UpdateUserMediaHandler atualiza status, progresso ou favoritos de um item da lista
 func UpdateUserMediaHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 	id := c.Param("id")
 
 	var item schemas.UserMedia
@@ -194,8 +203,11 @@ func UpdateUserMediaHandler(c *gin.Context) {
 
 // DeleteUserMediaHandler remove um item da lista do usuário
 func DeleteUserMediaHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 	id := c.Param("id")
 
 	res := db.Where("id = ? AND user_id = ?", id, userStr).Delete(&schemas.UserMedia{})
@@ -213,8 +225,11 @@ func DeleteUserMediaHandler(c *gin.Context) {
 
 // ToggleMediaFavoriteHandler favorita ou desfavorita
 func ToggleMediaFavoriteHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 	id := c.Param("id")
 
 	var item schemas.UserMedia
@@ -235,8 +250,11 @@ func ToggleMediaFavoriteHandler(c *gin.Context) {
 
 // ToggleMediaInCollectionHandler alterna visibilidade na coleção
 func ToggleMediaInCollectionHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr := userID.(string)
+	userStr := getCurrentUserID(c)
+	if userStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuário não autenticado"})
+		return
+	}
 	id := c.Param("id")
 
 	var item schemas.UserMedia

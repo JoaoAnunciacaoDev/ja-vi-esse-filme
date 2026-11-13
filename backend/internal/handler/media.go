@@ -86,8 +86,7 @@ func ShowMediaHandler(c *gin.Context) {
 
 // CreateMediaHandler cria um filme ou série manual
 func CreateMediaHandler(c *gin.Context) {
-	userID, _ := c.Get("userID")
-	userStr, _ := userID.(string)
+	userStr := getCurrentUserID(c)
 
 	var input schemas.CreateMediaInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -150,8 +149,7 @@ func ImportMediaHandler(c *gin.Context) {
 	}
 
 	// 2. Se não existir, cadastra
-	userID, _ := c.Get("userID")
-	userStr, _ := userID.(string)
+	userStr := getCurrentUserID(c)
 
 	item := schemas.MediaItem{
 		ID:            uuid.New().String(),
