@@ -2,9 +2,11 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JoaoAnunciacaoDev/ja-vi-esse-filme/backend/internal/schemas"
 	"github.com/gin-gonic/gin"
@@ -136,6 +138,11 @@ func ImportMediaHandler(c *gin.Context) {
 		return
 	}
 
+	// Sanitiza TMDBID: se menor ou igual a 0, deixa nil para evitar conflito de chave única no SQL
+	if input.TMDBID != nil && *input.TMDBID <= 0 {
+		input.TMDBID = nil
+	}
+
 	// 1. Se já existir pelo TMDBID, retorna a existente
 	if input.TMDBID != nil && *input.TMDBID > 0 {
 		var existing schemas.MediaItem
@@ -148,8 +155,21 @@ func ImportMediaHandler(c *gin.Context) {
 		}
 	}
 
-	// 2. Se não existir, cadastra
+	// 2. Se já existir por título e tipo, também reaproveita
+	if input.Title != "" {
+		var existingByTitle schemas.MediaItem
+		if err := db.Where("LOWER(title) = ? AND type = ?", strings.ToLower(input.Title), input.Type).First(&existingByTitle).Error; err == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Mídia já cadastrada",
+				"media":   existingByTitle,
+			})
+			return
+		}
+	}
+
+	// 3. Se não existir, cadastra com timestamps e segurança de FK
 	userStr := getCurrentUserID(c)
+	now := time.Now()
 
 	item := schemas.MediaItem{
 		ID:            uuid.New().String(),
@@ -169,13 +189,41 @@ func ImportMediaHandler(c *gin.Context) {
 		CastMembers:   input.CastMembers,
 		TotalSeasons:  input.TotalSeasons,
 		TotalEpisodes: input.TotalEpisodes,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
+
 	if userStr != "" {
-		item.CreatedBy = &userStr
+		var count int64
+		if err := db.Model(&schemas.User{}).Where("id = ?", userStr).Count(&count).Error; err == nil && count > 0 {
+			item.CreatedBy = &userStr
+		}
 	}
 
 	if err := db.Create(&item).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao importar mídia"})
+		// Se houve concorrência ou conflito de chave única, tenta recuperar novamente
+		if input.TMDBID != nil && *input.TMDBID > 0 {
+			var existing schemas.MediaItem
+			if findErr := db.Where("tmdb_id = ?", *input.TMDBID).First(&existing).Error; findErr == nil {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "Mídia já cadastrada",
+					"media":   existing,
+				})
+				return
+			}
+		}
+
+		var existingByTitle schemas.MediaItem
+		if findErr := db.Where("LOWER(title) = ? AND type = ?", strings.ToLower(input.Title), input.Type).First(&existingByTitle).Error; findErr == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Mídia já cadastrada",
+				"media":   existingByTitle,
+			})
+			return
+		}
+
+		log.Printf("[MEDIA_IMPORT_ERROR] Erro ao cadastrar mídia: %v (input: %+v)", err, input)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao salvar mídia: " + err.Error()})
 		return
 	}
 

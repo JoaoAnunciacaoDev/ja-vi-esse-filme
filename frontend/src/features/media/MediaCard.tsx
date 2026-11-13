@@ -66,7 +66,6 @@ export function MediaCard({
   onLogWatch,
 }: MediaCardProps) {
   const [imageError, setImageError] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isMovie = media.type === 'movie'
 
   const currentStatusConfig = userStatus ? STATUS_CONFIG[userStatus] : null
@@ -140,7 +139,7 @@ export function MediaCard({
         </div>
 
         {/* Ações e Seletor de Status (Quero Ver, Assistindo, Já Vi, Pausado, Abandonado) */}
-        <div className="pt-2 border-t border-slate-800/80 relative">
+        <div className="pt-2 border-t border-slate-800/80">
           <div className="flex items-center gap-1.5">
             {/* Botão Principal: Registrar Experiência com Detalhes */}
             {onLogWatch && (
@@ -148,144 +147,61 @@ export function MediaCard({
                 type="button"
                 onClick={() => onLogWatch(media)}
                 title="Registrar experiência no diário"
-                className="flex-1 inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
+                className="flex-1 inline-flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20 truncate"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Avaliar</span>
+                <Plus className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
+                <span className="truncate">Avaliar</span>
               </button>
             )}
 
-            {/* Menu Dropdown de Status de Acompanhamento */}
+            {/* Seletor Nativo Responsivo de Status (nunca corta nem desalinha no mobile) */}
             {onUpdateStatus && (
-              <div className="relative">
-                <button
-                  type="button"
+              <div className="relative flex-1 min-w-0">
+                <select
                   disabled={isUpdating}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsMenuOpen(!isMenuOpen)
+                  value={userStatus || ''}
+                  onChange={(e) => {
+                    const newStatus = e.target.value as WatchStatus
+                    if (newStatus) {
+                      onUpdateStatus(media, newStatus)
+                    }
                   }}
                   title="Alterar status de acompanhamento"
-                  className={`inline-flex items-center gap-1 py-2 px-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                  aria-label="Status de acompanhamento"
+                  className={`w-full appearance-none py-2 pl-2.5 pr-6 rounded-xl text-xs font-semibold border transition cursor-pointer truncate ${
                     isUpdating
                       ? 'opacity-60 cursor-not-allowed bg-slate-900 border-slate-800 text-slate-400'
-                      : userStatus
-                      ? 'bg-slate-800 border-slate-700 text-white'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                      : userStatus && currentStatusConfig
+                      ? `${currentStatusConfig.bg} font-bold`
+                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
                   }`}
                 >
+                  <option value="" disabled className="bg-slate-900 text-slate-400">
+                    Status
+                  </option>
+                  <option value="watching" className="bg-slate-900 text-cyan-400">
+                    Assistindo
+                  </option>
+                  <option value="plan_to_watch" className="bg-slate-900 text-amber-400">
+                    Quero Ver
+                  </option>
+                  <option value="completed" className="bg-slate-900 text-rose-400">
+                    Já Vi
+                  </option>
+                  <option value="paused" className="bg-slate-900 text-yellow-400">
+                    Pausado
+                  </option>
+                  <option value="dropped" className="bg-slate-900 text-slate-400">
+                    Abandonado
+                  </option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-400">
                   {isUpdating ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
                   ) : (
-                    <span>{currentStatusConfig ? currentStatusConfig.label : 'Status'}</span>
+                    <ChevronDown className="w-3.5 h-3.5 opacity-70" />
                   )}
-                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-                </button>
-
-                {isMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setIsMenuOpen(false)
-                      }}
-                    />
-                    <div className="absolute right-0 bottom-full mb-2 w-44 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-1.5 z-50 space-y-0.5 divide-y divide-slate-800/50">
-                      <div className="pb-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase px-2 tracking-wider">
-                          Mudar Status
-                        </span>
-                      </div>
-                      <div className="pt-1 space-y-0.5">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onUpdateStatus(media, 'watching')
-                            setIsMenuOpen(false)
-                          }}
-                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-left transition cursor-pointer ${
-                            userStatus === 'watching'
-                              ? 'bg-cyan-500/10 text-cyan-400 font-bold'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                          }`}
-                        >
-                          <Play className="w-3.5 h-3.5 text-cyan-400" />
-                          <span>Assistindo</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onUpdateStatus(media, 'plan_to_watch')
-                            setIsMenuOpen(false)
-                          }}
-                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-left transition cursor-pointer ${
-                            userStatus === 'plan_to_watch'
-                              ? 'bg-amber-500/10 text-amber-400 font-bold'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                          }`}
-                        >
-                          <Bookmark className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Quero Ver</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onUpdateStatus(media, 'completed')
-                            setIsMenuOpen(false)
-                          }}
-                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-left transition cursor-pointer ${
-                            userStatus === 'completed'
-                              ? 'bg-rose-500/10 text-rose-400 font-bold'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                          }`}
-                        >
-                          <Check className="w-3.5 h-3.5 text-rose-400" />
-                          <span>Já Vi (Concluído)</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onUpdateStatus(media, 'paused')
-                            setIsMenuOpen(false)
-                          }}
-                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-left transition cursor-pointer ${
-                            userStatus === 'paused'
-                              ? 'bg-yellow-500/10 text-yellow-400 font-bold'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                          }`}
-                        >
-                          <Pause className="w-3.5 h-3.5 text-yellow-400" />
-                          <span>Pausado</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onUpdateStatus(media, 'dropped')
-                            setIsMenuOpen(false)
-                          }}
-                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-left transition cursor-pointer ${
-                            userStatus === 'dropped'
-                              ? 'bg-slate-800 text-slate-300 font-bold'
-                              : 'text-slate-400 hover:bg-slate-800 hover:text-rose-400'
-                          }`}
-                        >
-                          <XCircle className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Abandonado</span>
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                </div>
               </div>
             )}
           </div>

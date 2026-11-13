@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, Home } from 'lucide-react'
+import { ArrowLeft, Film, Home } from 'lucide-react'
 
 interface NotFoundPageProps {
   path: string
@@ -21,8 +21,8 @@ export function NotFoundPage({ path, isAuthenticated, onGoHome }: NotFoundPagePr
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       <div className="max-w-md w-full bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
         <div className="flex flex-col items-center space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-950/30">
-            <BookOpen className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-950/30">
+            <Film className="w-8 h-8" />
           </div>
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
             Erro 404
@@ -34,7 +34,7 @@ export function NotFoundPage({ path, isAuthenticated, onGoHome }: NotFoundPagePr
             Página não encontrada
           </h1>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Parece que este capítulo foi arrancado do livro. O endereço acessado não existe ou foi movido.
+            Parece que esta cena foi cortada do filme. O endereço acessado não existe ou foi movido.
           </p>
         </div>
 
@@ -48,10 +48,10 @@ export function NotFoundPage({ path, isAuthenticated, onGoHome }: NotFoundPagePr
           <button
             type="button"
             onClick={onGoHome}
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition cursor-pointer shadow-lg shadow-emerald-500/20"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-semibold text-sm transition cursor-pointer shadow-lg shadow-rose-500/20"
           >
             <Home className="w-4 h-4" />
-            <span>{isAuthenticated ? 'Voltar para Minha Estante' : 'Ir para o início'}</span>
+            <span>{isAuthenticated ? 'Voltar para Minha Videoteca' : 'Ir para o início'}</span>
           </button>
 
           {canGoBack && (

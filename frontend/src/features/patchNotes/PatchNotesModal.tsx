@@ -43,7 +43,7 @@ export function PatchNotesModal({ onClose }: PatchNotesModalProps) {
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/80">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+            <div className="p-2 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -81,20 +81,20 @@ export function PatchNotesModal({ onClose }: PatchNotesModalProps) {
                   key={note.id}
                   className={`p-5 rounded-3xl border transition ${
                     isLatest
-                      ? 'bg-gradient-to-b from-emerald-950/20 via-slate-900 to-slate-900 border-emerald-500/30 shadow-lg shadow-emerald-500/5'
+                      ? 'bg-gradient-to-b from-rose-950/20 via-slate-900 to-slate-900 border-rose-500/30 shadow-lg shadow-rose-500/5'
                       : 'bg-slate-900/70 border-slate-800'
                   }`}
                 >
                   {/* Cabeçalho da Versão */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 font-mono text-xs font-extrabold px-2.5 py-1 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700">
+                      <span className="inline-flex items-center gap-1 font-mono text-xs font-extrabold px-2.5 py-1 rounded-xl bg-slate-800 text-rose-400 border border-slate-700">
                         <Tag className="w-3 h-3" />
                         {note.version}
                       </span>
                       <h4 className="text-sm font-bold text-white">{note.title}</h4>
                       {isLatest && (
-                        <span className="text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full">
                           Versão Atual
                         </span>
                       )}
@@ -119,7 +119,7 @@ export function PatchNotesModal({ onClose }: PatchNotesModalProps) {
                     {/* Novidades */}
                     {changes.features && changes.features.length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 mb-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400 mb-1.5">
                           <Rocket className="w-3.5 h-3.5" />
                           <span>Novidades</span>
                         </div>

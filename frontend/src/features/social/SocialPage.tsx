@@ -27,9 +27,9 @@ import { triggerConfetti } from '@/components/ui/confetti'
 import {
   Flame,
   Trophy,
-  BookOpen,
-  Target,
-  ScrollText,
+  Film,
+  Tv,
+  Bookmark,
   Star,
   Search,
   UserPlus,
@@ -225,7 +225,7 @@ export function SocialPage() {
       const res = await searchUsers(searchQuery.trim())
       setSearchResults(res.users || [])
     } catch (err) {
-      console.error('Erro ao buscar leitores:', err)
+      console.error('Erro ao buscar cinéfilos:', err)
     } finally {
       setIsSearching(false)
     }
@@ -279,7 +279,7 @@ export function SocialPage() {
     <div className="space-y-6">
       {/* Toast Feedback */}
       {socialToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-6 right-6 z-50 bg-rose-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-4">
           <Users className="w-5 h-5" />
           <span className="text-sm font-medium">{socialToast}</span>
         </div>
@@ -289,7 +289,7 @@ export function SocialPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-6 rounded-3xl border border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
+            <span className="p-1.5 bg-rose-500/10 text-rose-400 rounded-lg border border-rose-500/20">
               <Users className="w-5 h-5" />
             </span>
             <h1 className="text-xl font-extrabold text-white tracking-tight">Comunidade Cinéfila</h1>
@@ -305,7 +305,7 @@ export function SocialPage() {
             onClick={() => setActiveTab('feed')}
             className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'feed'
-                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -317,7 +317,7 @@ export function SocialPage() {
             onClick={() => setActiveTab('rankings')}
             className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'rankings'
-                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -329,7 +329,7 @@ export function SocialPage() {
             onClick={() => setActiveTab('discover')}
             className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 relative ${
               activeTab === 'discover'
-                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -347,13 +347,13 @@ export function SocialPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <Sparkles className="w-4 h-4 text-rose-400" />
               Atividades Recentes
             </h2>
             <button
               onClick={() => feedQuery.refetch()}
               disabled={isFeedLoading}
-              className="text-xs text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition cursor-pointer"
+              className="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isFeedLoading ? 'animate-spin' : ''}`} />
               Atualizar
@@ -371,13 +371,13 @@ export function SocialPage() {
               </div>
               <h3 className="text-sm font-bold text-white">Seu feed está silencioso</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Siga outros leitores na aba <strong>Descobrir</strong> ou registre suas próprias sessões de leitura para movimentar a comunidade!
+                Siga outros cinéfilos na aba <strong>Descobrir</strong> ou registre seus filmes e séries para movimentar a comunidade!
               </p>
               <button
                 onClick={() => setActiveTab('discover')}
-                className="mt-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-semibold hover:bg-emerald-500/20 transition cursor-pointer"
+                className="mt-2 px-4 py-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold hover:bg-rose-500/20 transition cursor-pointer"
               >
-                Buscar Leitores
+                Buscar Cinéfilos
               </button>
             </div>
           ) : (
@@ -393,10 +393,10 @@ export function SocialPage() {
                     className="p-5 bg-slate-900/70 border border-slate-800 rounded-3xl hover:border-slate-700/80 transition flex flex-col gap-3.5 shadow-sm"
                   >
                     <div className="flex items-start gap-4">
-                      {/* Avatar do Leitor */}
+                      {/* Avatar do Cinéfilo */}
                       <div
                         onClick={() => setSelectedUsername(item.user.username)}
-                        className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-extrabold flex items-center justify-center text-sm shadow cursor-pointer shrink-0 hover:scale-105 transition"
+                        className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-extrabold flex items-center justify-center text-sm shadow cursor-pointer shrink-0 hover:scale-105 transition"
                       >
                         {item.user.display_name?.charAt(0).toUpperCase() || 'U'}
                       </div>
@@ -405,7 +405,7 @@ export function SocialPage() {
                         <div className="flex flex-wrap items-center gap-1.5 text-xs mb-1">
                           <button
                             onClick={() => setSelectedUsername(item.user.username)}
-                            className="font-bold text-white hover:text-emerald-400 transition cursor-pointer"
+                            className="font-bold text-white hover:text-rose-400 transition cursor-pointer"
                           >
                             {item.user.display_name}
                           </button>
@@ -423,8 +423,8 @@ export function SocialPage() {
 
                         {/* Conteúdo Contextual por Tipo de Atividade */}
                         {item.type === 'WATCHED_MOVIE' && (
-                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-2xl">
-                            <BookOpen className="w-5 h-5 text-sky-400 shrink-0" />
+                          <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
+                            <Film className="w-5 h-5 text-rose-400 shrink-0" />
                             <div className="text-xs">
                               <span className="text-slate-300">Assistiu ao filme: </span>
                               <strong className="text-white font-semibold">
@@ -441,7 +441,7 @@ export function SocialPage() {
 
                         {item.type === 'WATCHED_EPISODE' && (
                           <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl">
-                            <ScrollText className="w-5 h-5 text-cyan-400 shrink-0" />
+                            <Tv className="w-5 h-5 text-cyan-400 shrink-0" />
                             <div className="text-xs">
                               <span className="text-slate-300">Assistiu a um episódio de </span>
                               <strong className="text-white font-bold">"{item.media?.title || meta.media_title || 'Série'}"</strong>
@@ -454,7 +454,7 @@ export function SocialPage() {
 
                         {item.type === 'ADDED_TO_WATCHLIST' && (
                           <div className="flex items-center gap-2 mt-1.5 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                            <Target className="w-5 h-5 text-amber-400 shrink-0" />
+                            <Bookmark className="w-5 h-5 text-amber-400 shrink-0" />
                             <div className="text-xs">
                               <span className="text-slate-300">Adicionou à lista de assistir mais tarde: </span>
                               <strong className="text-white font-semibold">
@@ -519,8 +519,8 @@ export function SocialPage() {
                           onClick={() => handleToggleComments(item.id)}
                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl transition cursor-pointer ${
                             isCommentsOpen
-                              ? 'text-emerald-400 bg-emerald-500/10 font-bold'
-                              : 'hover:text-emerald-400 hover:bg-slate-800/60'
+                              ? 'text-rose-400 bg-rose-500/10 font-bold'
+                              : 'hover:text-rose-400 hover:bg-slate-800/60'
                           }`}
                         >
                           <MessageSquare className="w-4 h-4" />
@@ -574,7 +574,7 @@ export function SocialPage() {
                           </div>
                         ) : activityComments.length === 0 ? (
                           <div className="text-center py-2 text-xs text-slate-500">
-                            Seja o primeiro a deixar uma mensagem de incentivo!
+                            Seja o primeiro a deixar um comentário sobre o filme!
                           </div>
                         ) : (
                           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -583,7 +583,7 @@ export function SocialPage() {
                                 key={c.id}
                                 className="flex items-start gap-2.5 p-2 bg-slate-800/40 rounded-xl text-xs"
                               >
-                                <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[10px] shrink-0">
+                                <div className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 font-bold flex items-center justify-center text-[10px] shrink-0">
                                   {c.user?.display_name?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -612,14 +612,14 @@ export function SocialPage() {
                             type="text"
                             value={commentInput}
                             onChange={(e) => setCommentInput(e.target.value)}
-                            placeholder="Escreva um comentário de incentivo..."
+                            placeholder="Escreva um comentário sobre a sessão..."
                             maxLength={500}
-                            className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition"
+                            className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500 transition"
                           />
                           <button
                             type="submit"
                             disabled={!commentInput.trim() || isSubmittingComment}
-                            className="p-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white rounded-xl transition cursor-pointer"
+                            className="p-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white rounded-xl transition cursor-pointer"
                           >
                             <Send className="w-3.5 h-3.5" />
                           </button>
@@ -646,7 +646,7 @@ export function SocialPage() {
                   onClick={() => setRankingCriterion('watched')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     rankingCriterion === 'watched'
-                      ? 'bg-emerald-500 text-slate-950 font-bold'
+                      ? 'bg-rose-500 text-white font-bold'
                       : 'bg-slate-800 text-slate-400 hover:text-white'
                   }`}
                 >
@@ -688,13 +688,13 @@ export function SocialPage() {
             {/* Seletor de Ano */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                <Calendar className="w-3.5 h-3.5 text-rose-400" />
                 <span>Ano:</span>
               </span>
               <select
                 value={rankingYear}
                 onChange={(e) => setRankingYear(Number(e.target.value))}
-                className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-rose-500 cursor-pointer"
               >
                 {RANKING_YEAR_OPTIONS.map((y) => (
                   <option key={y} value={y} className="bg-slate-900 text-white">
@@ -713,7 +713,7 @@ export function SocialPage() {
             <div className="p-12 text-center bg-slate-900/40 rounded-3xl border border-slate-800 space-y-2">
               <Trophy className="w-10 h-10 text-slate-500 mx-auto" />
               <h3 className="text-sm font-bold text-white">Nenhum dado de ranking para este período</h3>
-              <p className="text-xs text-slate-400">Comece a ler para liderar o placar!</p>
+              <p className="text-xs text-slate-400">Assista a filmes e episódios para liderar o placar!</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -735,14 +735,14 @@ export function SocialPage() {
                       {item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : '🥉'}
                     </div>
 
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-extrabold flex items-center justify-center text-xl shadow-md mb-2">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-extrabold flex items-center justify-center text-xl shadow-md mb-2">
                       {item.user.display_name?.charAt(0).toUpperCase() || 'U'}
                     </div>
 
                     <h4 className="text-sm font-bold text-white truncate max-w-full">
                       {item.user.display_name}
                       {item.is_current_user && (
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full ml-1">
+                        <span className="text-[10px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-full ml-1">
                           Você
                         </span>
                       )}
@@ -769,7 +769,7 @@ export function SocialPage() {
                       key={item.user.id}
                       onClick={() => setSelectedUsername(item.user.username)}
                       className={`flex items-center justify-between p-4 hover:bg-slate-800/40 transition cursor-pointer ${
-                        item.is_current_user ? 'bg-emerald-500/5' : ''
+                        item.is_current_user ? 'bg-rose-500/5' : ''
                       }`}
                     >
                       <div className="flex items-center gap-4">
@@ -787,7 +787,7 @@ export function SocialPage() {
                           #{item.rank}
                         </span>
 
-                        <div className="w-9 h-9 rounded-xl bg-slate-800 text-emerald-400 font-bold flex items-center justify-center text-xs shadow border border-slate-700">
+                        <div className="w-9 h-9 rounded-xl bg-slate-800 text-rose-400 font-bold flex items-center justify-center text-xs shadow border border-slate-700">
                           {item.user.display_name?.charAt(0).toUpperCase() || 'U'}
                         </div>
 
@@ -795,7 +795,7 @@ export function SocialPage() {
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-white">{item.user.display_name}</span>
                             {item.is_current_user && (
-                              <span className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.2 rounded-full">
+                              <span className="text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.2 rounded-full">
                                 Você
                               </span>
                             )}
@@ -817,7 +817,7 @@ export function SocialPage() {
         </div>
       )}
 
-      {/* ABA 3: DESCOBRIR LEITORES & PEDIDOS */}
+      {/* ABA 3: DESCOBRIR CINÉFILOS & PEDIDOS */}
       {activeTab === 'discover' && (
         <div className="space-y-6">
           {/* Solicitações Pendentes (se houver) */}
@@ -849,7 +849,7 @@ export function SocialPage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleRespondRequest(req.id, 'accept')}
-                        className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition cursor-pointer"
+                        className="p-1.5 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition cursor-pointer"
                         title="Aceitar"
                       >
                         <Check className="w-3.5 h-3.5" />
@@ -876,14 +876,14 @@ export function SocialPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar leitores por nome de usuário ou display name..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:border-emerald-500 transition"
+                placeholder="Buscar cinéfilos por nome de usuário ou display name..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:border-rose-500 transition"
               />
             </div>
             <button
               type="submit"
               disabled={isSearching}
-              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-semibold shadow transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl text-xs font-semibold shadow transition cursor-pointer flex items-center gap-1.5 shrink-0"
             >
               <Search className="w-3.5 h-3.5" />
               <span>{isSearching ? 'Buscando...' : 'Buscar'}</span>
@@ -902,7 +902,7 @@ export function SocialPage() {
                     onClick={() => setSelectedUsername(user.username)}
                     className="flex items-center gap-3 cursor-pointer min-w-0"
                   >
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-extrabold flex items-center justify-center text-sm shadow shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-extrabold flex items-center justify-center text-sm shadow shrink-0">
                       {user.display_name?.charAt(0).toUpperCase() || 'U'}
                     </div>
 
@@ -920,7 +920,7 @@ export function SocialPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
                       user.is_following
                         ? 'bg-slate-800 text-slate-300 hover:bg-rose-500/10 hover:text-rose-400'
-                        : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm'
+                        : 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm'
                     }`}
                   >
                     {user.is_following ? 'Seguindo' : 'Seguir'}
@@ -930,12 +930,12 @@ export function SocialPage() {
             </div>
           ) : searchQuery && !isSearching ? (
             <div className="py-12 text-center text-slate-400 text-xs">
-              Nenhum leitor encontrado com o termo "{searchQuery}".
+              Nenhum cinéfilo encontrado com o termo "{searchQuery}".
             </div>
           ) : (
             <div className="py-12 text-center text-slate-500 text-xs space-y-1">
               <Users className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-              <p>Digite um nome ou arroba para encontrar leitores e expandir seu círculo de leitura.</p>
+              <p>Digite um nome ou arroba para encontrar cinéfilos e acompanhar o que estão assistindo.</p>
             </div>
           )}
         </div>
@@ -987,7 +987,7 @@ export function SocialPage() {
                     }}
                     className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-slate-950/60 hover:bg-slate-800/70 border border-slate-800/80 transition text-left cursor-pointer"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold flex items-center justify-center text-sm shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-bold flex items-center justify-center text-sm shrink-0">
                       {liker.display_name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -1005,7 +1005,7 @@ export function SocialPage() {
         </div>
       )}
 
-      {/* Modal de Perfil do Leitor */}
+      {/* Modal de Perfil do Cinéfilo */}
       {selectedUsername && (
         <UserProfileModal
           username={selectedUsername}

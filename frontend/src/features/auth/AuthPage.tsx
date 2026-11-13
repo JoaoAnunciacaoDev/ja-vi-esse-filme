@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, LogIn, UserPlus, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Film, LogIn, UserPlus, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from './AuthContext'
 import { Footer } from '@/components/layout/Footer'
 
@@ -60,8 +60,8 @@ export function AuthPage() {
       <div className="my-auto max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
         {/* Logo & Título */}
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 mb-2">
-            <BookOpen className="w-8 h-8" />
+          <div className="inline-flex p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20 mb-2">
+            <Film className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Já Vi Esse Filme</h1>
           <p className="text-sm text-slate-400">
@@ -75,7 +75,7 @@ export function AuthPage() {
             type="button"
             onClick={() => { setMode('login'); setError(null); }}
             className={`flex-1 py-2 rounded-lg transition flex items-center justify-center space-x-2 cursor-pointer ${
-              mode === 'login' ? 'bg-emerald-500 text-slate-950 font-semibold shadow' : 'text-slate-400 hover:text-white'
+              mode === 'login' ? 'bg-rose-500 text-white font-semibold shadow' : 'text-slate-400 hover:text-white'
             }`}
           >
             <LogIn className="w-4 h-4" />
@@ -85,7 +85,7 @@ export function AuthPage() {
             type="button"
             onClick={() => { setMode('register'); setError(null); }}
             className={`flex-1 py-2 rounded-lg transition flex items-center justify-center space-x-2 cursor-pointer ${
-              mode === 'register' ? 'bg-emerald-500 text-slate-950 font-semibold shadow' : 'text-slate-400 hover:text-white'
+              mode === 'register' ? 'bg-rose-500 text-white font-semibold shadow' : 'text-slate-400 hover:text-white'
             }`}
           >
             <UserPlus className="w-4 h-4" />
@@ -114,7 +114,7 @@ export function AuthPage() {
                 value={loginTarget}
                 onChange={(e) => setLoginTarget(e.target.value)}
                 placeholder="joao ou joao@exemplo.com"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition text-sm"
               />
             </div>
             <div>
@@ -128,7 +128,7 @@ export function AuthPage() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-4 pr-11 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm"
+                  className="w-full pl-4 pr-11 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition text-sm"
                 />
                 <button
                   type="button"
@@ -144,7 +144,7 @@ export function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-xl transition flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
+              className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl transition flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer shadow-lg shadow-rose-500/20"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>Acessar Plataforma</span>}
             </button>
@@ -162,7 +162,7 @@ export function AuthPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Ex: João Silva"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition text-sm"
               />
             </div>
             <div>
@@ -175,7 +175,7 @@ export function AuthPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="joaosilva"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition text-sm"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="joao@email.com"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition text-sm"
               />
             </div>
             <div>
@@ -203,7 +203,7 @@ export function AuthPage() {
                   value={registerPassword}
                   onChange={(e) => setRegisterPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-4 pr-11 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition text-sm"
+                  className="w-full pl-4 pr-11 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition text-sm"
                 />
                 <button
                   type="button"
@@ -219,7 +219,7 @@ export function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-xl transition flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
+              className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl transition flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer shadow-lg shadow-rose-500/20"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>Criar Minha Conta</span>}
             </button>

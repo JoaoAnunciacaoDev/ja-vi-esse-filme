@@ -83,7 +83,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/60">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
+            <div className="p-2 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20 shrink-0">
               <Shield className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -107,7 +107,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
           {/* Seção de Perfil */}
           <div className="space-y-3.5">
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" />
+              <User className="w-3.5 h-3.5 text-rose-400" />
               Dados do Perfil
             </h4>
 
@@ -119,7 +119,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
                 maxLength={50}
-                className="w-full px-3.5 py-2.5 bg-slate-800/70 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-800/70 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500 transition"
               />
             </div>
 
@@ -132,8 +132,8 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                 onChange={(e) => setBio(e.target.value)}
                 maxLength={250}
                 rows={3}
-                placeholder="Conte um pouco sobre suas leituras e autores favoritos..."
-                className="w-full px-3.5 py-2.5 bg-slate-800/70 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500 transition resize-none"
+                placeholder="Conte um pouco sobre seus filmes, séries e diretores favoritos..."
+                className="w-full px-3.5 py-2.5 bg-slate-800/70 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500 transition resize-none"
               />
             </div>
           </div>
@@ -143,7 +143,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
           {/* Seção de Privacidade da Conta */}
           <div className="space-y-3.5">
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
+              <Lock className="w-3.5 h-3.5 text-rose-400" />
               Privacidade da Conta
             </h4>
 
@@ -152,12 +152,12 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                 type="checkbox"
                 checked={isPrivate}
                 onChange={(e) => setIsPrivate(e.target.checked)}
-                className="mt-0.5 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500"
+                className="mt-0.5 rounded border-slate-700 text-rose-500 focus:ring-rose-500"
               />
               <div className="text-xs">
                 <span className="font-semibold text-white block mb-0.5">Conta Privada</span>
                 <span className="text-slate-400 block leading-relaxed">
-                  Apenas seguidores que você aprovar poderão ver sua estante, conquistas e sessões de leitura.
+                  Apenas seguidores que você aprovar poderão ver sua videoteca e diário de filmes.
                 </span>
               </div>
             </label>
@@ -168,7 +168,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-slate-400" />
-                    Quem pode ver minha Estante:
+                    Quem pode ver minha Videoteca:
                   </label>
                   <select
                     value={privacy.library_visibility}
@@ -178,7 +178,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                         library_visibility: e.target.value as any,
                       })
                     }
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500 cursor-pointer"
                   >
                     <option value="public">Todos (Público)</option>
                     <option value="followers">Apenas Seguidores</option>
@@ -189,7 +189,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-slate-400" />
-                    Quem pode ver minhas Estatísticas e Streaks:
+                    Quem pode ver minhas Estatísticas:
                   </label>
                   <select
                     value={privacy.stats_visibility}
@@ -199,7 +199,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
                         stats_visibility: e.target.value as any,
                       })
                     }
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500 cursor-pointer"
                   >
                     <option value="public">Todos (Público)</option>
                     <option value="followers">Apenas Seguidores</option>
@@ -214,7 +214,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
               <div
                 className={`p-3 rounded-xl text-xs font-semibold text-center ${
                   feedback.includes('sucesso')
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                 }`}
               >
@@ -235,7 +235,7 @@ export function PrivacySettingsModal({ onClose }: PrivacySettingsModalProps) {
             <button
               type="submit"
               disabled={isSaving || isLoading}
-              className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-rose-500/20 transition cursor-pointer flex items-center gap-1.5"
             >
               {isSaving ? (
                 'Salvando...'

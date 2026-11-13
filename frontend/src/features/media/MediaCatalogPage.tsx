@@ -57,11 +57,23 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       item: MediaItem | ExternalMediaResult
       status: WatchStatus
     }) => {
-      // 1. Se for ExternalMediaResult ou não tiver id persistido no banco, garante que esteja importado
-      let mediaId = 'id' in item && typeof item.id === 'string' ? item.id : ''
-      if (!mediaId && 'tmdb_id' in item) {
+      // 1. Verifica se já temos esse item na watchlist do usuário
+      const existingInWatchlist = watchlistData?.items?.find((i) => {
+        if ('id' in item && item.id && i.media_id === item.id) return true
+        if ('tmdb_id' in item && item.tmdb_id && i.media?.tmdb_id === item.tmdb_id) return true
+        return false
+      })
+
+      if (existingInWatchlist) {
+        return watchlistApi.update(existingInWatchlist.id, { status })
+      }
+
+      // 2. Se for ExternalMediaResult ou não tiver id persistido no banco, garante que esteja importado
+      let mediaId = 'id' in item && typeof item.id === 'string' && item.id.length > 0 ? item.id : ''
+      if (!mediaId) {
+        const tmdbIdNum = 'tmdb_id' in item && typeof item.tmdb_id === 'number' && item.tmdb_id > 0 ? item.tmdb_id : undefined
         const importRes = await mediaApi.import({
-          tmdb_id: item.tmdb_id,
+          tmdb_id: tmdbIdNum,
           type: item.type || 'movie',
           title: item.title,
           original_title: item.original_title || item.title,
@@ -79,16 +91,11 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
         throw new Error('Não foi possível identificar a mídia para salvar.')
       }
 
-      // 2. Se já existe na lista do usuário, atualiza; senão adiciona
-      const existing = watchlistData?.items?.find((i) => i.media_id === mediaId)
-      if (existing) {
-        return watchlistApi.update(existing.id, { status })
-      } else {
-        return watchlistApi.add({
-          media_id: mediaId,
-          status,
-        })
-      }
+      // 3. Adiciona à videoteca
+      return watchlistApi.add({
+        media_id: mediaId,
+        status,
+      })
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['watchlist'] })

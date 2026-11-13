@@ -239,12 +239,12 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/60">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
+            <div className="p-2 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20 shrink-0">
               <Bell className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-white">Lembretes & Notificações</h3>
-              <p className="text-xs text-slate-400">Configure seus horários de leitura e alertas</p>
+              <p className="text-xs text-slate-400">Configure seus alertas e notificações</p>
             </div>
           </div>
 
@@ -264,7 +264,7 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
           <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-white">
-                <Smartphone className="w-4 h-4 text-emerald-400" />
+                <Smartphone className="w-4 h-4 text-rose-400" />
                 <span>Notificações neste Aparelho</span>
               </div>
               <span className="text-[11px] text-slate-400">{activeDevices} dispositivo(s) conectado(s)</span>
@@ -272,8 +272,8 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
 
             <p className="text-xs text-slate-400 leading-relaxed">
               {isDeviceSubscribed
-                ? 'Este aparelho está ativo e configurado para receber alertas de leitura.'
-                : 'Ative para receber lembretes de leitura mesmo com a aba fechada.'}
+                ? 'Este aparelho está ativo e configurado para receber notificações.'
+                : 'Ative para receber novidades e alertas mesmo com a aba fechada.'}
             </p>
 
             {browserPermission === 'denied' && (
@@ -298,7 +298,7 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
                   type="button"
                   onClick={handleEnablePushInBrowser}
                   disabled={isSubscribing || browserPermission === 'denied'}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-500 text-white transition cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-500 hover:bg-rose-600 disabled:bg-slate-800 disabled:text-slate-500 text-white transition cursor-pointer flex items-center gap-1.5"
                 >
                   <Bell className="w-3.5 h-3.5" />
                   {isSubscribing ? 'Ativando...' : 'Ativar neste Aparelho'}
@@ -325,12 +325,12 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
                 onChange={(e) =>
                   setSettings({ ...settings, daily_reminder_enabled: e.target.checked })
                 }
-                className="mt-0.5 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500"
+                className="mt-0.5 rounded border-slate-700 text-rose-500 focus:ring-rose-500"
               />
               <div className="text-xs flex-1">
-                <span className="font-semibold text-white block mb-0.5">Lembrete Diário de Leitura</span>
+                <span className="font-semibold text-white block mb-0.5">Lembrete Diário</span>
                 <span className="text-slate-400 block leading-relaxed mb-2">
-                  Receba um lembrete no horário agendado caso ainda não tenha lido no dia.
+                  Receba um lembrete no horário agendado para atualizar suas sessões e diário.
                 </span>
 
                 {settings.daily_reminder_enabled && (
@@ -346,7 +346,7 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
                       onChange={(e) =>
                         setSettings({ ...settings, reminder_time: e.target.value })
                       }
-                      className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                      className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs font-mono focus:outline-none focus:border-rose-500 cursor-pointer"
                     >
                       {HOURLY_OPTIONS.map((hour) => (
                         <option key={hour} value={hour}>
@@ -366,15 +366,15 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
                 onChange={(e) =>
                   setSettings({ ...settings, streak_alert_enabled: e.target.checked })
                 }
-                className="mt-0.5 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500"
+                className="mt-0.5 rounded border-slate-700 text-rose-500 focus:ring-rose-500"
               />
               <div className="text-xs flex-1">
                 <span className="font-semibold text-white flex items-center gap-1 mb-0.5">
                   <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                  Alerta de Ofensiva em Risco
+                  Alerta de Sessão Noturna
                 </span>
                 <span className="text-slate-400 block leading-relaxed">
-                  Aviso de emergência caso sua ofensiva diária vá expirar antes da meia-noite.
+                  Aviso para registrar o que assistiu hoje antes do fim do dia.
                 </span>
               </div>
             </label>
@@ -384,7 +384,7 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
               <div
                 className={`p-3 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-1.5 ${
                   feedback.includes('sucesso') || feedback.includes('perfeitamente')
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                 }`}
               >
@@ -406,7 +406,7 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
             <button
               type="submit"
               disabled={isSaving || isLoading}
-              className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-rose-500/20 transition cursor-pointer flex items-center gap-1.5"
             >
               {isSaving ? (
                 'Salvando...'

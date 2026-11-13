@@ -4,7 +4,7 @@ export function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center space-x-1.5 text-center sm:text-left">
           <span>Feito por</span>
-          <span className="font-semibold text-slate-200 hover:text-emerald-400 transition-colors">
+          <span className="font-semibold text-slate-200 hover:text-rose-400 transition-colors">
             João Victor Anunciação da Silva
           </span>
         </div>

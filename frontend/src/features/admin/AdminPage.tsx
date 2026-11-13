@@ -11,8 +11,7 @@ import type { PatchNote } from '@/types/patchNotes'
 import {
   ShieldCheck,
   Users,
-  BookOpen,
-  ScrollText,
+  Film,
   Sparkles,
   Search,
   Plus,
@@ -263,7 +262,7 @@ export function AdminPage() {
                     </span>
                     <Users className="w-5 h-5 text-indigo-400" />
                   </div>
-                  <span className="text-[10px] text-emerald-400 mt-1 block">
+                  <span className="text-[10px] text-rose-400 mt-1 block">
                     +{dashboardData.overview.new_users_last_30_days} novos nos últimos 30d
                   </span>
                 </div>
@@ -282,10 +281,10 @@ export function AdminPage() {
                 <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-2xl">
                   <span className="text-[11px] text-slate-400 font-medium block mb-1">Sessões Assistidas</span>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-extrabold text-emerald-400">
+                    <span className="text-2xl font-extrabold text-rose-400">
                       {dashboardData.overview.total_watch_logs}
                     </span>
-                    <ScrollText className="w-5 h-5 text-emerald-400" />
+                    <Film className="w-5 h-5 text-rose-400" />
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">
                     {dashboardData.overview.total_reviews} avaliações
@@ -298,7 +297,7 @@ export function AdminPage() {
                     <span className="text-2xl font-extrabold text-sky-400">
                       {dashboardData.overview.total_media}
                     </span>
-                    <BookOpen className="w-5 h-5 text-sky-400" />
+                    <Film className="w-5 h-5 text-sky-400" />
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">
                     {dashboardData.overview.total_movies} filmes • {dashboardData.overview.total_series} séries
@@ -409,7 +408,7 @@ export function AdminPage() {
                           <div className="text-[11px] text-slate-400">@{u.username}</div>
                         </td>
                         <td className="py-3 px-4 text-slate-300 font-mono text-[11px]">{u.email}</td>
-                        <td className="py-3 px-4 text-emerald-400 font-bold">{u.total_logs}</td>
+                        <td className="py-3 px-4 text-rose-400 font-bold">{u.total_logs}</td>
                         <td className="py-3 px-4 text-slate-300">{u.total_media}</td>
                         <td className="py-3 px-4">
                           <span
@@ -449,7 +448,7 @@ export function AdminPage() {
             className="p-6 bg-slate-900/70 border border-slate-800 rounded-3xl space-y-4 shadow"
           >
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <Sparkles className="w-4 h-4 text-rose-400" />
               Publicar Nova Versão (Patch Note)
             </h3>
 
@@ -495,7 +494,7 @@ export function AdminPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Novidades */}
               <div className="p-3 bg-slate-800/30 border border-slate-800 rounded-2xl space-y-2">
-                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                <span className="text-xs font-bold text-rose-400 flex items-center gap-1">
                   <Rocket className="w-3.5 h-3.5" /> Novidades
                 </span>
                 {features.map((item, idx) => (
@@ -515,7 +514,7 @@ export function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setFeatures([...features, ''])}
-                  className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3 h-3" /> Adicionar
                 </button>
@@ -602,7 +601,7 @@ export function AdminPage() {
               <div
                 className={`p-3 rounded-xl text-xs font-semibold text-center ${
                   noteFeedback.includes('sucesso')
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                 }`}
               >
@@ -633,14 +632,14 @@ export function AdminPage() {
                 >
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-mono text-xs font-bold text-emerald-400 bg-slate-800 px-2 py-0.5 rounded-lg">
+                      <span className="font-mono text-xs font-bold text-rose-400 bg-slate-800 px-2 py-0.5 rounded-lg">
                         {note.version}
                       </span>
                       <h5 className="text-xs font-bold text-white">{note.title}</h5>
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           note.is_published
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                             : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                         }`}
                       >

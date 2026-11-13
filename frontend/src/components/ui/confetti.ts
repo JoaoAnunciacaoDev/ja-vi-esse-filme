@@ -1,4 +1,4 @@
-// Utilitário de confetes leve nativo usando Canvas HTML5 para celebrações no Silverfish
+// Utilitário de confetes leve nativo usando Canvas HTML5 para celebrações no Já Vi Esse Filme
 
 export function triggerConfetti() {
   if (typeof window === 'undefined') return

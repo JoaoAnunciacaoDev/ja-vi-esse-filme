@@ -44,7 +44,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Film className="w-6 h-6 text-emerald-400" />
+            <Film className="w-6 h-6 text-rose-400" />
             <span>Diário de Filmes & Séries</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -103,7 +103,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
       {/* Lista do Diário (Linha do Tempo) */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+          <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
         </div>
       ) : logs.length > 0 ? (
         <div className="space-y-3">
@@ -171,7 +171,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
                     {/* Linha 2: Data e Avaliação */}
                     <div className="flex items-center gap-3 text-xs text-slate-400 mt-1.5">
                       <div className="flex items-center gap-1 text-slate-400">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                        <Calendar className="w-3.5 h-3.5 text-rose-400" />
                         <span>{log.watched_at}</span>
                       </div>
 
@@ -200,7 +200,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
                         {isLongReview && (
                           <button
                             onClick={() => toggleExpand(log.id)}
-                            className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 cursor-pointer pt-0.5"
+                            className="text-[11px] font-bold text-rose-400 hover:text-rose-300 cursor-pointer pt-0.5"
                           >
                             {isExpanded ? 'Ler menos' : 'Ler mais'}
                           </button>
@@ -239,7 +239,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
           </div>
           <button
             onClick={() => onNavigateToCatalog()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer shadow-md shadow-rose-500/20"
           >
             <Sparkles className="w-4 h-4" />
             <span>Explorar filmes e séries</span>

@@ -5,7 +5,7 @@ import {
   X,
   Flame,
   Trophy,
-  BookOpen,
+  Film,
   Users,
   Lock,
   Calendar,
@@ -93,7 +93,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header do Modal */}
-        <div className="shrink-0 relative bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 p-4 sm:p-6 border-b border-slate-800">
+        <div className="shrink-0 relative bg-gradient-to-r from-rose-950/60 via-slate-900 to-slate-900 p-4 sm:p-6 border-b border-slate-800">
           <button
             type="button"
             onClick={onClose}
@@ -104,7 +104,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
 
           {isLoading ? (
             <div className="py-8 text-center text-slate-400 text-sm animate-pulse">
-              Carregando perfil do leitor...
+              Carregando perfil...
             </div>
           ) : error || !profile ? (
             <div className="py-8 text-center text-rose-400 text-sm">
@@ -113,7 +113,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
           ) : (
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               {/* Avatar */}
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-extrabold flex items-center justify-center text-3xl shadow-lg border-2 border-emerald-500/20 shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white font-extrabold flex items-center justify-center text-3xl shadow-lg border-2 border-rose-500/20 shrink-0">
                 {profile.display_name?.charAt(0).toUpperCase() || 'U'}
               </div>
 
@@ -139,7 +139,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                 {/* Contadores Sociais */}
                 <div className="flex items-center justify-center sm:justify-start gap-4 text-xs text-slate-400">
                   <div className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-emerald-400" />
+                    <Users className="w-3.5 h-3.5 text-rose-400" />
                     <span>
                       <strong className="text-white font-semibold">{profile.followers_count}</strong> seguidores
                     </span>
@@ -167,7 +167,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                         ? 'bg-slate-800 text-slate-300 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/20 border border-slate-700'
                         : profile.is_pending
                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        : 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20 shadow-md'
                     }`}
                   >
                     {isFollowLoading
@@ -194,7 +194,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                 </div>
                 <h3 className="text-base font-bold text-white">Este perfil é privado</h3>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Siga este leitor para ter acesso à sua estante pessoal, conquistas e histórico de leitura.
+                  Siga este cinéfilo para ter acesso à sua videoteca pessoal e diário de filmes.
                 </p>
               </div>
             ) : (
@@ -219,8 +219,8 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                     </div>
 
                     <div className="bg-slate-800/40 border border-slate-800/80 rounded-2xl p-3.5 text-center">
-                      <div className="text-emerald-400 flex items-center justify-center gap-1 mb-1">
-                        <BookOpen className="w-4 h-4 text-emerald-400" />
+                      <div className="text-rose-400 flex items-center justify-center gap-1 mb-1">
+                        <Film className="w-4 h-4 text-rose-400" />
                         <span className="text-base font-extrabold">{profile.stats.total_reviews}</span>
                       </div>
                       <span className="text-[11px] text-slate-400 font-medium">Avaliações</span>
@@ -258,7 +258,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                             />
                           ) : (
                             <div className="w-12 h-16 bg-slate-700/60 rounded-lg flex items-center justify-center text-slate-500 shrink-0">
-                              <BookOpen className="w-5 h-5" />
+                              <Film className="w-5 h-5" />
                             </div>
                           )}
 
@@ -268,7 +268,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                             <div className="mt-1 flex items-center gap-2">
                               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 item.status === 'completed'
-                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  ? 'bg-rose-500/10 text-rose-400'
                                   : item.status === 'watching'
                                   ? 'bg-cyan-500/10 text-cyan-400'
                                   : 'bg-amber-500/10 text-amber-300'
@@ -280,7 +280,7 @@ export function UserProfileModal({ username, onClose, onFollowChanged }: UserPro
                                   : 'Quero Ver'}
                               </span>
                               {item.status === 'completed' && (
-                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                <CheckCircle2 className="w-3 h-3 text-rose-400" />
                               )}
                             </div>
                           </div>

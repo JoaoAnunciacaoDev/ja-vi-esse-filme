@@ -51,7 +51,7 @@ const PatchNotesModal = lazy(() =>
 function TabLoadingFallback() {
   return (
     <div className="flex flex-col items-center justify-center py-20 space-y-3 text-slate-400">
-      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
       <span className="text-xs font-medium">Carregando conteúdo...</span>
     </div>
   )
@@ -423,13 +423,13 @@ function Main() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 select-none">
         <div className="flex flex-col items-center space-y-4 max-w-xs text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-lg shadow-emerald-950/20 animate-pulse">
-            <Film className="w-7 h-7 text-emerald-400" />
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shadow-lg shadow-rose-950/20 animate-pulse">
+            <Film className="w-7 h-7 text-rose-400" />
           </div>
           <div className="space-y-1">
             <h1 className="text-base font-bold text-white tracking-wide">Já Vi Esse Filme</h1>
             <div className="flex items-center justify-center space-x-2 text-xs text-slate-400">
-              <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
               <span>Verificando sessão...</span>
             </div>
           </div>

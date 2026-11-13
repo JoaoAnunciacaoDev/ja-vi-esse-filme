@@ -16,7 +16,7 @@ export function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20 text-slate-500">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
       </div>
     )
   }
@@ -28,7 +28,7 @@ export function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-          <BarChart3 className="w-6 h-6 text-emerald-400" />
+          <BarChart3 className="w-6 h-6 text-rose-400" />
           <span>Estatísticas Cinéfilas</span>
         </h1>
         <p className="text-xs text-slate-400 mt-1">
@@ -84,7 +84,7 @@ export function DashboardPage() {
         {/* Onde você mais assiste */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Film className="w-4 h-4 text-emerald-400" />
+            <Film className="w-4 h-4 text-rose-400" />
             <span>Onde você mais assiste</span>
           </h2>
 
@@ -102,7 +102,7 @@ export function DashboardPage() {
                     </div>
                     <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        className="h-full bg-rose-500 rounded-full transition-all duration-500"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
@@ -118,7 +118,7 @@ export function DashboardPage() {
         {/* Ritmo nos Últimos Meses */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-emerald-400" />
+            <Calendar className="w-4 h-4 text-rose-400" />
             <span>Ritmo nos últimos meses</span>
           </h2>
 
@@ -133,7 +133,7 @@ export function DashboardPage() {
                     <span className="text-[11px] font-bold text-slate-300">{m.count}</span>
                     <div className="w-full max-w-[36px] bg-slate-950 rounded-xl overflow-hidden flex flex-col justify-end h-full">
                       <div
-                        className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-xl transition-all duration-500"
+                        className="w-full bg-gradient-to-t from-rose-600 to-amber-500 rounded-xl transition-all duration-500"
                         style={{ height: `${heightPercent}%` }}
                       />
                     </div>
@@ -152,7 +152,7 @@ export function DashboardPage() {
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-emerald-400" />
+            <Calendar className="w-4 h-4 text-rose-400" />
             <span>Frequência no Ano</span>
           </h2>
           <span className="text-xs text-slate-500">
@@ -168,10 +168,10 @@ export function DashboardPage() {
                 title={`${d.date}: ${d.count} sessões`}
                 className={`w-3.5 h-3.5 rounded-sm transition ${
                   d.count >= 3
-                    ? 'bg-emerald-400'
+                    ? 'bg-rose-400'
                     : d.count === 2
-                    ? 'bg-emerald-500'
-                    : 'bg-emerald-700'
+                    ? 'bg-rose-500'
+                    : 'bg-rose-700'
                 }`}
               />
             ))}
