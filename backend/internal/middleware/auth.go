@@ -48,6 +48,7 @@ func RequireAuth() gin.HandlerFunc {
 
 		user := row.User
 		c.Set("currentUser", &user)
+		c.Set("userID", user.ID)
 		c.Next()
 	}
 }
