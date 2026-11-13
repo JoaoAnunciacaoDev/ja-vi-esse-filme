@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/JoaoAnunciacaoDev/ja-vi-esse-filme/backend/internal/schemas"
@@ -82,11 +83,16 @@ func CreateWatchLogHandler(c *gin.Context) {
 	}
 
 	// 3. Cria o registro de visualização (WatchLog)
+	watchedAt := strings.TrimSpace(input.WatchedAt)
+	if watchedAt == "" {
+		watchedAt = now.Format("2006-01-02")
+	}
+
 	logItem := schemas.WatchLog{
 		ID:               uuid.New().String(),
 		UserID:           userStr,
 		MediaID:          input.MediaID,
-		WatchedAt:        input.WatchedAt,
+		WatchedAt:        watchedAt,
 		MediaType:        mediaType,
 		SeasonNumber:     input.SeasonNumber,
 		EpisodeNumber:    input.EpisodeNumber,

@@ -54,7 +54,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
 
         <button
           onClick={() => onOpenLogModal()}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition cursor-pointer shadow-lg shadow-emerald-500/20"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer shadow-lg shadow-rose-500/20"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Registrar que Vi</span>

@@ -96,7 +96,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
               className="flex items-center space-x-3 cursor-pointer"
               onClick={() => onSelectTab('catalog')}
             >
-              <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+              <div className="p-2 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20">
                 <Film className="w-6 h-6" />
               </div>
               <span className="text-xl font-extrabold tracking-tight text-white hidden sm:inline">
@@ -110,7 +110,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
                 onClick={() => onSelectTab('catalog')}
                 className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   currentTab === 'catalog'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
@@ -122,7 +122,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
                 onClick={() => onSelectTab('library')}
                 className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   currentTab === 'library'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
@@ -134,7 +134,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
                 onClick={() => onSelectTab('journal')}
                 className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   currentTab === 'journal'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
@@ -146,7 +146,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
                 onClick={() => onSelectTab('dashboard')}
                 className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   currentTab === 'dashboard'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
@@ -158,7 +158,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
                 onClick={() => onSelectTab('social')}
                 className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   currentTab === 'social'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
@@ -187,7 +187,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           <div className="flex items-center space-x-2">
             <button
               onClick={() => handleOpenLogModal()}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/20"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
             >
               <span>+ Já Vi</span>
             </button>
@@ -195,7 +195,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
             {/* Patch Notes */}
             <button
               onClick={() => setIsPatchNotesOpen(true)}
-              className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition cursor-pointer"
+              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition cursor-pointer"
               title="Novidades da Plataforma (Patch Notes)"
             >
               <Sparkles className="w-4 h-4" />
@@ -216,7 +216,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
               className="flex items-center space-x-2 bg-slate-800/60 hover:bg-slate-800 pl-2 pr-3 py-1.5 rounded-full border border-slate-700/50 text-xs transition cursor-pointer"
               title="Configurações de Perfil e Privacidade"
             >
-              <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-[11px]">
+              <div className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold flex items-center justify-center text-[11px]">
                 {user?.display_name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <span className="font-medium text-slate-200 hidden xs:inline">{user?.display_name}</span>
@@ -298,7 +298,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           aria-label="Explorar Filmes e Séries"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'catalog'
-              ? 'text-emerald-400 bg-emerald-500/10'
+              ? 'text-rose-400 bg-rose-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -311,7 +311,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           aria-label="Minha Lista"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'library'
-              ? 'text-emerald-400 bg-emerald-500/10'
+              ? 'text-rose-400 bg-rose-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -324,7 +324,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           aria-label="Diário de Sessões"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'journal'
-              ? 'text-emerald-400 bg-emerald-500/10'
+              ? 'text-rose-400 bg-rose-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -337,7 +337,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           aria-label="Estatísticas Cinéfilas"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'dashboard'
-              ? 'text-emerald-400 bg-emerald-500/10'
+              ? 'text-rose-400 bg-rose-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -350,7 +350,7 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
           aria-label="Comunidade"
           className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-2xl transition cursor-pointer ${
             currentTab === 'social'
-              ? 'text-emerald-400 bg-emerald-500/10'
+              ? 'text-rose-400 bg-rose-500/10'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >

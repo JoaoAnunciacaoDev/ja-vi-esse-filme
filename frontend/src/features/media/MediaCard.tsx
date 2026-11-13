@@ -76,7 +76,7 @@ export function MediaCard({ media, onAddToWatchlist, onLogWatch, isInWatchlist }
           {onLogWatch && (
             <button
               onClick={() => onLogWatch(media)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 active:scale-95 transition cursor-pointer shadow-md shadow-emerald-500/20"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Já Vi</span>

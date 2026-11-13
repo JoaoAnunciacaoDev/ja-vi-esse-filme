@@ -25,7 +25,7 @@ export interface WatchLogSummary {
 
 export interface CreateWatchLogInput {
   media_id: string
-  watched_at: string // YYYY-MM-DD
+  watched_at?: string // YYYY-MM-DD, YYYY ou vazio se não lembra
   media_type?: MediaType
   season_number?: number
   episode_number?: number

@@ -201,7 +201,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                     <button
                       onClick={() => onOpenLogModal(media)}
                       title="Registrar experiência / Avaliar"
-                      className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition cursor-pointer"
+                      className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer"
                     >
                       <Plus className="w-3 h-3 stroke-[3]" />
                       <span>Vi</span>

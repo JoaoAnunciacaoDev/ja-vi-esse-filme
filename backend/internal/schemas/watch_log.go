@@ -28,7 +28,7 @@ func (WatchLog) TableName() string {
 
 type CreateWatchLogInput struct {
 	MediaID          string    `json:"media_id" binding:"required"`
-	WatchedAt        string    `json:"watched_at" binding:"required"` // YYYY-MM-DD
+	WatchedAt        string    `json:"watched_at"` // YYYY-MM-DD, YYYY ou "" (quando não lembra a data)
 	MediaType        MediaType `json:"media_type" binding:"omitempty,oneof=movie tv"`
 	SeasonNumber     int       `json:"season_number"`
 	EpisodeNumber    int       `json:"episode_number"`
