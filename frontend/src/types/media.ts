@@ -36,7 +36,7 @@ export interface ExternalMediaResult {
   vote_average?: number
 }
 
-export type WatchStatus = 'plan_to_watch' | 'watching' | 'completed' | 'dropped'
+export type WatchStatus = 'plan_to_watch' | 'watching' | 'completed' | 'paused' | 'dropped'
 
 export interface UserMedia {
   id: string

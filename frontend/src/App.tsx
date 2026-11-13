@@ -28,7 +28,6 @@ import {
   Users,
   Settings,
   ShieldCheck,
-  Bell,
   Sparkles,
   WifiOff,
 } from 'lucide-react'
@@ -47,11 +46,6 @@ const PrivacySettingsModal = lazy(() =>
 )
 const PatchNotesModal = lazy(() =>
   import('@/features/patchNotes/PatchNotesModal').then((m) => ({ default: m.PatchNotesModal }))
-)
-const NotificationSettingsModal = lazy(() =>
-  import('@/features/notifications/NotificationSettingsModal').then((m) => ({
-    default: m.NotificationSettingsModal,
-  }))
 )
 
 function TabLoadingFallback() {
@@ -73,7 +67,6 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
   const { user, logout, connectionError, isReconnecting, refreshUser } = useAuth()
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
   const [isPatchNotesOpen, setIsPatchNotesOpen] = useState(false)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
 
   // Estado do Modal de Registrar Sessão / Experiência
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
@@ -185,13 +178,6 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
 
           {/* Ações Rápidas */}
           <div className="flex items-center space-x-2">
-            <button
-              onClick={() => handleOpenLogModal()}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
-            >
-              <span>+ Já Vi</span>
-            </button>
-
             {/* Patch Notes */}
             <button
               onClick={() => setIsPatchNotesOpen(true)}
@@ -199,15 +185,6 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
               title="Novidades da Plataforma (Patch Notes)"
             >
               <Sparkles className="w-4 h-4" />
-            </button>
-
-            {/* Lembretes */}
-            <button
-              onClick={() => setIsNotificationsOpen(true)}
-              className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition cursor-pointer"
-              title="Configurações de Notificações"
-            >
-              <Bell className="w-4 h-4" />
             </button>
 
             {/* Perfil & Privacidade */}
@@ -391,10 +368,6 @@ function AuthenticatedApp({ currentTab, onSelectTab, route }: AuthenticatedAppPr
 
         {isPatchNotesOpen && (
           <PatchNotesModal onClose={() => setIsPatchNotesOpen(false)} />
-        )}
-
-        {isNotificationsOpen && (
-          <NotificationSettingsModal onClose={() => setIsNotificationsOpen(false)} />
         )}
       </Suspense>
     </div>

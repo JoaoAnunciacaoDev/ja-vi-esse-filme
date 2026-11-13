@@ -2,7 +2,18 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchlistApi } from '@/api/watchlist'
 import type { WatchStatus, MediaItem } from '@/types/media'
-import { Bookmark, Film, Tv, Check, Trash2, Heart, Plus, Loader2 } from 'lucide-react'
+import {
+  Bookmark,
+  Tv,
+  Check,
+  Trash2,
+  Heart,
+  Plus,
+  Loader2,
+  Play,
+  Pause,
+  XCircle,
+} from 'lucide-react'
 
 interface WatchlistPageProps {
   onOpenLogModal: (media?: MediaItem) => void
@@ -11,7 +22,7 @@ interface WatchlistPageProps {
 
 export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: WatchlistPageProps) {
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<WatchStatus | 'favorites'>('plan_to_watch')
+  const [activeTab, setActiveTab] = useState<WatchStatus | 'favorites'>('watching')
 
   const { data, isLoading } = useQuery({
     queryKey: ['watchlist'],
@@ -41,9 +52,11 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
     return item.status === activeTab
   })
 
-  const planCount = allItems.filter((i) => i.status === 'plan_to_watch').length
   const watchingCount = allItems.filter((i) => i.status === 'watching').length
+  const planCount = allItems.filter((i) => i.status === 'plan_to_watch').length
   const completedCount = allItems.filter((i) => i.status === 'completed').length
+  const pausedCount = allItems.filter((i) => i.status === 'paused').length
+  const droppedCount = allItems.filter((i) => i.status === 'dropped').length
   const favCount = allItems.filter((i) => i.favorite).length
 
   return (
@@ -52,28 +65,43 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Bookmark className="w-6 h-6 text-emerald-400" />
+            <Bookmark className="w-6 h-6 text-rose-400" />
             <span>Minha Videoteca</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Seus filmes e séries organizados em assistir mais tarde, assistindo e já vistos.
+            Seus filmes e séries organizados em assistindo, quero ver, já vistos, pausados ou abandonados.
           </p>
         </div>
 
         <button
           onClick={onNavigateToCatalog}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition cursor-pointer shadow-lg shadow-emerald-500/20"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer shadow-lg shadow-rose-500/20"
         >
           <Plus className="w-4 h-4" />
           <span>Buscar títulos</span>
         </button>
       </div>
 
-      {/* Abas de Status */}
-      <div className="flex bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-semibold overflow-x-auto scrollbar-none">
+      {/* Abas de Status com todas as categorias solicitadas */}
+      <div className="flex bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-semibold overflow-x-auto scrollbar-none gap-1">
+        <button
+          onClick={() => setActiveTab('watching')}
+          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeTab === 'watching'
+              ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Play className="w-3.5 h-3.5" />
+          <span>Assistindo</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'watching' ? 'bg-slate-950/20' : 'bg-slate-800'}`}>
+            {watchingCount}
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab('plan_to_watch')}
-          className={`flex-1 min-w-[120px] py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'plan_to_watch'
               ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -87,40 +115,55 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
         </button>
 
         <button
-          onClick={() => setActiveTab('watching')}
-          className={`flex-1 min-w-[120px] py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
-            activeTab === 'watching'
-              ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Tv className="w-3.5 h-3.5" />
-          <span>Assistindo</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'watching' ? 'bg-slate-950/20' : 'bg-slate-800'}`}>
-            {watchingCount}
-          </span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('completed')}
-          className={`flex-1 min-w-[120px] py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'completed'
-              ? 'bg-emerald-500 text-slate-950 shadow-md font-bold'
+              ? 'bg-rose-500 text-white shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
           }`}
         >
           <Check className="w-3.5 h-3.5 stroke-[2.5]" />
           <span>Já Vi</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'completed' ? 'bg-slate-950/20' : 'bg-slate-800'}`}>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'completed' ? 'bg-white/20' : 'bg-slate-800'}`}>
             {completedCount}
           </span>
         </button>
 
         <button
+          onClick={() => setActiveTab('paused')}
+          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeTab === 'paused'
+              ? 'bg-yellow-500 text-slate-950 shadow-md font-bold'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Pause className="w-3.5 h-3.5" />
+          <span>Pausado</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'paused' ? 'bg-slate-950/20' : 'bg-slate-800'}`}>
+            {pausedCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('dropped')}
+          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeTab === 'dropped'
+              ? 'bg-slate-700 text-white shadow-md font-bold'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <XCircle className="w-3.5 h-3.5" />
+          <span>Abandonado</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'dropped' ? 'bg-white/20' : 'bg-slate-800'}`}>
+            {droppedCount}
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('favorites')}
-          className={`flex-1 min-w-[120px] py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'favorites'
-              ? 'bg-rose-500 text-white shadow-md font-bold'
+              ? 'bg-rose-600 text-white shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -135,7 +178,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
       {/* Grid de Itens */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+          <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
         </div>
       ) : filteredItems.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -159,20 +202,16 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-3 text-slate-600 bg-slate-950">
-                      {isMovie ? <Film className="w-8 h-8 mb-1" /> : <Tv className="w-8 h-8 mb-1" />}
-                      <span className="text-[11px] text-center font-medium line-clamp-2">{media.title}</span>
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-slate-600">
+                      <Tv className="w-10 h-10 mb-2 stroke-1" />
+                      <span className="text-xs text-center line-clamp-2">{media.title}</span>
                     </div>
                   )}
 
-                  {/* Badges superiores */}
-                  <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold backdrop-blur-md bg-slate-950/70 border border-white/10 text-white">
-                    {isMovie ? 'Filme' : 'Série'}
-                  </div>
-
+                  {/* Favorito */}
                   <button
                     onClick={() => toggleFavoriteMutation.mutate(item.id)}
-                    className="absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md bg-slate-950/70 border border-white/10 text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                    className="absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md bg-slate-950/70 text-slate-400 hover:text-rose-400 transition cursor-pointer"
                   >
                     <Heart className={`w-3.5 h-3.5 ${item.favorite ? 'fill-rose-500 text-rose-500' : ''}`} />
                   </button>
@@ -188,7 +227,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                 {/* Conteúdo */}
                 <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
                   <div>
-                    <h3 className="font-bold text-white text-xs line-clamp-1 group-hover:text-emerald-400 transition" title={media.title}>
+                    <h3 className="font-bold text-white text-xs line-clamp-1 group-hover:text-rose-400 transition" title={media.title}>
                       {media.title}
                     </h3>
                     {media.year ? (
@@ -196,37 +235,47 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                     ) : null}
                   </div>
 
-                  {/* Ações */}
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1.5">
+                  {/* Seletor rápido de Status no Card */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center gap-1">
+                      <select
+                        value={item.status}
+                        onChange={(e) =>
+                          updateStatusMutation.mutate({
+                            id: item.id,
+                            status: e.target.value as WatchStatus,
+                          })
+                        }
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-rose-500 cursor-pointer"
+                      >
+                        <option value="watching">Assistindo</option>
+                        <option value="plan_to_watch">Quero Ver</option>
+                        <option value="completed">Já Vi</option>
+                        <option value="paused">Pausado</option>
+                        <option value="dropped">Abandonado</option>
+                      </select>
+
+                      <button
+                        onClick={() => {
+                          if (confirm(`Remover "${media.title}" da sua videoteca?`)) {
+                            deleteMutation.mutate(item.id)
+                          }
+                        }}
+                        title="Remover da lista"
+                        className="p-1 rounded-lg bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Botão Registrar Sessão com Detalhes */}
                     <button
                       onClick={() => onOpenLogModal(media)}
-                      title="Registrar experiência / Avaliar"
-                      className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer"
+                      title="Registrar experiência detalhada com nota e resenha"
+                      className="w-full inline-flex items-center justify-center gap-1 py-1 rounded-lg text-[11px] font-bold bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition cursor-pointer"
                     >
-                      <Plus className="w-3 h-3 stroke-[3]" />
-                      <span>Vi</span>
-                    </button>
-
-                    {item.status === 'plan_to_watch' && (
-                      <button
-                        onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'watching' })}
-                        title="Marcar como Assistindo agora"
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-cyan-400 hover:bg-slate-700 transition cursor-pointer"
-                      >
-                        <Tv className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => {
-                        if (confirm(`Remover "${media.title}" da sua lista?`)) {
-                          deleteMutation.mutate(item.id)
-                        }
-                      }}
-                      title="Remover da lista"
-                      className="p-1.5 rounded-lg bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                      <span>Avaliar / Registrar</span>
                     </button>
                   </div>
                 </div>
@@ -238,14 +287,14 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
         <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-10 text-center space-y-4">
           <Bookmark className="w-12 h-12 text-slate-600 mx-auto" />
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-white">Nenhum título nesta lista</h3>
+            <h3 className="text-sm font-bold text-white">Nenhum título nesta categoria</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Explore o catálogo para encontrar filmes e séries que você quer assistir ou já assistiu!
+              Explore o catálogo para encontrar filmes e séries e organize o que está assistindo ou planeja ver!
             </p>
           </div>
           <button
             onClick={onNavigateToCatalog}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer shadow-md shadow-rose-500/20"
           >
             <Plus className="w-4 h-4" />
             <span>Explorar catálogo</span>

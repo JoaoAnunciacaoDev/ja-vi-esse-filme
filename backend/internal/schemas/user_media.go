@@ -8,6 +8,7 @@ const (
 	StatusPlanToWatch WatchStatus = "plan_to_watch"
 	StatusWatching    WatchStatus = "watching"
 	StatusCompleted   WatchStatus = "completed"
+	StatusPaused      WatchStatus = "paused"
 	StatusDropped     WatchStatus = "dropped"
 )
 
@@ -33,7 +34,7 @@ func (UserMedia) TableName() string {
 
 type AddToUserMediaInput struct {
 	MediaID        string      `json:"media_id" binding:"required"`
-	Status         WatchStatus `json:"status" binding:"omitempty,oneof=plan_to_watch watching completed dropped"`
+	Status         WatchStatus `json:"status" binding:"omitempty,oneof=plan_to_watch watching completed paused dropped"`
 	Favorite       *bool       `json:"favorite,omitempty"`
 	InCollection   *bool       `json:"in_collection,omitempty"`
 	CurrentSeason  *int        `json:"current_season,omitempty"`
@@ -41,7 +42,7 @@ type AddToUserMediaInput struct {
 }
 
 type UpdateUserMediaInput struct {
-	Status         *WatchStatus `json:"status,omitempty" binding:"omitempty,oneof=plan_to_watch watching completed dropped"`
+	Status         *WatchStatus `json:"status,omitempty" binding:"omitempty,oneof=plan_to_watch watching completed paused dropped"`
 	Favorite       *bool        `json:"favorite,omitempty"`
 	InCollection   *bool        `json:"in_collection,omitempty"`
 	CurrentSeason  *int         `json:"current_season,omitempty"`

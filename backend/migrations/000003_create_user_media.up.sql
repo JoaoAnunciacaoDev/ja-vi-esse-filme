@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS user_media (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     media_id TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'plan_to_watch', -- 'plan_to_watch', 'watching', 'completed', 'dropped'
+    status TEXT NOT NULL DEFAULT 'plan_to_watch', -- 'plan_to_watch', 'watching', 'completed', 'paused', 'dropped'
     favorite BOOLEAN NOT NULL DEFAULT FALSE,
     in_collection BOOLEAN NOT NULL DEFAULT TRUE,
     current_season INTEGER NOT NULL DEFAULT 0,
