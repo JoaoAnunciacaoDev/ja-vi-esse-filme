@@ -1,3 +1,38 @@
+// formatDateDDMMYYYY padroniza qualquer string de data em DD/MM/YYYY
+export function formatDateDDMMYYYY(dateStr?: string | null): string {
+  if (!dateStr) return ''
+  const trimmed = dateStr.trim()
+  if (!trimmed) return ''
+
+  // Se já for DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+    return trimmed
+  }
+
+  // Se for apenas ano (ex: "1996")
+  if (/^\d{4}$/.test(trimmed)) {
+    return trimmed
+  }
+
+  // Se for YYYY-MM-DD ou ISO
+  const ymdMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed)
+  if (ymdMatch) {
+    const [, y, m, d] = ymdMatch
+    return `${d}/${m}/${y}`
+  }
+
+  try {
+    const parsed = new Date(trimmed)
+    if (isNaN(parsed.getTime())) return trimmed
+    const day = String(parsed.getUTCDate()).padStart(2, '0')
+    const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+    const year = parsed.getUTCFullYear()
+    return `${day}/${month}/${year}`
+  } catch {
+    return trimmed
+  }
+}
+
 export function extractDateOnly(dateStr?: string | null): string {
   if (!dateStr) return ''
   const trimmed = dateStr.trim()
@@ -24,7 +59,7 @@ export function formatSessionDate(
   dateStr?: string | null,
   options: Intl.DateTimeFormatOptions = {
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
   }
 ): string {
@@ -50,10 +85,13 @@ export function formatFinishedDate(finishedAt?: string | null): string | null {
       (d.getUTCMonth() === 0 && d.getUTCDate() === 1 && d.getUTCHours() === 12 && d.getUTCMinutes() === 0)
 
     if (isYearOnly) {
-      return `Lido em ${d.getUTCFullYear()}`
+      return `Assistido em ${d.getUTCFullYear()}`
     }
 
-    return `Lido em ${d.toLocaleDateString('pt-BR')}`
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    return `Assistido em ${day}/${month}/${year}`
   } catch {
     return null
   }

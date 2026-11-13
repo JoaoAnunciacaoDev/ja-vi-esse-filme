@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchLogsApi } from '@/api/watchLogs'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { formatDateDDMMYYYY } from '@/utils/date'
 import type { WatchLog, MediaItem } from '@/types/media'
 import { Film, Tv, Star, Calendar, Plus, Trash2, Repeat, Loader2, Sparkles, AlertTriangle } from 'lucide-react'
 
@@ -192,7 +193,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
                     <div className="flex items-center gap-3 text-xs text-slate-400 mt-1.5">
                       <div className="flex items-center gap-1 text-slate-400">
                         <Calendar className="w-3.5 h-3.5 text-rose-400" />
-                        <span>{log.watched_at}</span>
+                        <span>{formatDateDDMMYYYY(log.watched_at)}</span>
                       </div>
 
                       {log.rating > 0 && (

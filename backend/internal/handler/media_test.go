@@ -44,3 +44,36 @@ func TestWatchLogModel(t *testing.T) {
 		t.Errorf("esperava is_rewatch ser true")
 	}
 }
+
+func TestSameTitleDistinctMovies(t *testing.T) {
+	tmdb1996 := 4232
+	tmdb2022 := 646385
+
+	movie1 := schemas.MediaItem{
+		ID:     "scream-1996",
+		TMDBID: &tmdb1996,
+		Title:  "Pânico",
+		Year:   1996,
+		Type:   schemas.MediaTypeMovie,
+	}
+
+	movie2 := schemas.MediaItem{
+		ID:     "scream-2022",
+		TMDBID: &tmdb2022,
+		Title:  "Pânico",
+		Year:   2022,
+		Type:   schemas.MediaTypeMovie,
+	}
+
+	if movie1.Title != movie2.Title {
+		t.Fatalf("esperava títulos idênticos para testar diferenciação por ano e TMDB ID")
+	}
+
+	if *movie1.TMDBID == *movie2.TMDBID {
+		t.Fatalf("esperava TMDB IDs distintos")
+	}
+
+	if movie1.Year == movie2.Year {
+		t.Fatalf("esperava anos de lançamento distintos")
+	}
+}

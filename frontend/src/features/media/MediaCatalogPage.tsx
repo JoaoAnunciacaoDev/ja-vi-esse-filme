@@ -65,10 +65,14 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       item: MediaItem | ExternalMediaResult
       status: WatchStatus
     }) => {
-      // 1. Verifica se já temos esse item na watchlist do usuário
+      // 1. Verifica se já temos esse item na watchlist do usuário (prioriza tmdb_id para não colidir títulos iguais)
       const existingInWatchlist = watchlistData?.items?.find((i) => {
-        if ('id' in item && item.id && i.media_id === item.id) return true
-        if ('tmdb_id' in item && item.tmdb_id && i.media?.tmdb_id === item.tmdb_id) return true
+        if ('tmdb_id' in item && typeof item.tmdb_id === 'number' && item.tmdb_id > 0) {
+          return i.media?.tmdb_id === item.tmdb_id
+        }
+        if ('id' in item && item.id) {
+          return i.media_id === item.id
+        }
         return false
       })
 
@@ -132,8 +136,12 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (item: MediaItem | ExternalMediaResult) => {
       const existingInWatchlist = watchlistData?.items?.find((i) => {
-        if ('id' in item && item.id && i.media_id === item.id) return true
-        if ('tmdb_id' in item && item.tmdb_id && i.media?.tmdb_id === item.tmdb_id) return true
+        if ('tmdb_id' in item && typeof item.tmdb_id === 'number' && item.tmdb_id > 0) {
+          return i.media?.tmdb_id === item.tmdb_id
+        }
+        if ('id' in item && item.id) {
+          return i.media_id === item.id
+        }
         return false
       })
 
@@ -300,9 +308,16 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       {/* Grid de Resultados ou Destaques */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white tracking-wide">
-            {debouncedQuery ? `Resultados para "${debouncedQuery}"` : 'Títulos em Destaque'}
-          </h2>
+          <div>
+            <h2 className="text-base font-bold text-white tracking-wide">
+              {debouncedQuery ? `Resultados para "${debouncedQuery}"` : 'Em Alta nesta Semana'}
+            </h2>
+            {!debouncedQuery && (
+              <p className="text-xs text-slate-400 mt-0.5">
+                Os títulos mais populares e assistidos do momento
+              </p>
+            )}
+          </div>
           <span className="text-xs text-slate-500 font-medium">
             {data?.results ? `${data.results.length} títulos` : ''}
           </span>
@@ -328,7 +343,12 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
                 isFav = Boolean(userFavoriteByTmdbId.get(item.tmdb_id))
               }
 
-              const cardKey = 'id' in item && item.id ? String(item.id) : `tmdb-${item.tmdb_id || idx}-${item.title}`
+              const cardKey =
+                'tmdb_id' in item && typeof item.tmdb_id === 'number' && item.tmdb_id > 0
+                  ? `tmdb-${item.tmdb_id}`
+                  : 'id' in item && item.id
+                  ? String(item.id)
+                  : `media-${idx}-${item.title}-${item.year || ''}`
 
               const isItemUpdating =
                 updateStatusMutation.isPending &&

@@ -35,6 +35,46 @@ type tmdbSearchResponse struct {
 	Results []tmdbSearchResult `json:"results"`
 }
 
+var tmdbGenreMap = map[int]string{
+	28:    "Ação",
+	12:    "Aventura",
+	16:    "Animação",
+	35:    "Comédia",
+	80:    "Crime",
+	99:    "Documentário",
+	18:    "Drama",
+	10751: "Família",
+	14:    "Fantasia",
+	36:    "História",
+	27:    "Terror",
+	10402: "Música",
+	9648:  "Mistério",
+	10749: "Romance",
+	878:   "Ficção científica",
+	10770: "Cinema TV",
+	53:    "Thriller",
+	10752: "Guerra",
+	37:    "Faroeste",
+	10759: "Ação e Aventura",
+	10762: "Kids",
+	10763: "Notícias",
+	10764: "Reality",
+	10765: "Sci-Fi & Fantasia",
+	10766: "Soap",
+	10767: "Talk",
+	10768: "Guerra & Política",
+}
+
+func mapGenreIDsToString(genreIDs []int) string {
+	var names []string
+	for _, id := range genreIDs {
+		if name, ok := tmdbGenreMap[id]; ok {
+			names = append(names, name)
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
 var popularMockMedia = []schemas.ExternalMediaResult{
 	{
 		TMDBID:        157336,
@@ -119,7 +159,28 @@ var popularMockMedia = []schemas.ExternalMediaResult{
 // SearchExternalMediaHandler busca filmes e séries pelo TMDB ou fallback local
 func SearchExternalMediaHandler(c *gin.Context) {
 	query := strings.TrimSpace(c.Query("q"))
+	mediaTypeFilter := strings.TrimSpace(c.Query("type")) // movie, tv ou vazio (todos)
+
+	// Obtém a chave TMDB do config ou variável de ambiente
+	tmdbKey := cfg.TmdbAPIKey
+	if tmdbKey == "" {
+		tmdbKey = os.Getenv("TMDB_API_KEY")
+	}
+
+	// Sem query de busca: retorna os títulos em alta / mais populares da semana!
 	if query == "" {
+		if tmdbKey != "" {
+			trending, err := getTMDBTrendingWeek(mediaTypeFilter, tmdbKey)
+			if err == nil && len(trending) > 0 {
+				c.JSON(http.StatusOK, gin.H{
+					"results": trending,
+					"source":  "tmdb_trending",
+				})
+				return
+			}
+			log.Printf("[TMDB] Falha ao buscar em alta da semana: %v. Usando fallback.", err)
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"results": popularMockMedia,
 			"source":  "featured",
@@ -127,13 +188,7 @@ func SearchExternalMediaHandler(c *gin.Context) {
 		return
 	}
 
-	mediaTypeFilter := strings.TrimSpace(c.Query("type")) // movie, tv ou vazio (todos)
-
 	// 1. Tenta buscar no TMDB caso tenha TMDB_API_KEY no config ou ambiente
-	tmdbKey := cfg.TmdbAPIKey
-	if tmdbKey == "" {
-		tmdbKey = os.Getenv("TMDB_API_KEY")
-	}
 	if tmdbKey != "" {
 		results, err := searchTMDB(query, mediaTypeFilter, tmdbKey)
 		if err == nil && len(results) > 0 {
@@ -256,6 +311,8 @@ func searchTMDB(query, mediaType, apiKey string) ([]schemas.ExternalMediaResult,
 			backdropURL = "https://image.tmdb.org/t/p/w1280" + item.BackdropPath
 		}
 
+		genres := mapGenreIDsToString(item.GenreIDs)
+
 		results = append(results, schemas.ExternalMediaResult{
 			TMDBID:        item.ID,
 			Type:          schemas.MediaType(item.MediaType),
@@ -266,10 +323,109 @@ func searchTMDB(query, mediaType, apiKey string) ([]schemas.ExternalMediaResult,
 			BackdropURL:   backdropURL,
 			ReleaseDate:   relDate,
 			Year:          year,
+			Genres:        genres,
 			VoteAverage:   item.VoteAverage,
 		})
 	}
 
 	log.Printf("[TMDB] Busca por '%s' retornou %d resultados", query, len(results))
+	return results, nil
+}
+
+// getTMDBTrendingWeek busca as obras mais populares/em alta da semana no TMDB
+func getTMDBTrendingWeek(mediaType, apiKey string) ([]schemas.ExternalMediaResult, error) {
+	var endpoint string
+	switch mediaType {
+	case "movie":
+		endpoint = fmt.Sprintf("https://api.themoviedb.org/3/trending/movie/week?api_key=%s&language=pt-BR", apiKey)
+	case "tv":
+		endpoint = fmt.Sprintf("https://api.themoviedb.org/3/trending/tv/week?api_key=%s&language=pt-BR", apiKey)
+	default:
+		endpoint = fmt.Sprintf("https://api.themoviedb.org/3/trending/all/week?api_key=%s&language=pt-BR", apiKey)
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("tmdb trending retornou status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var tmdbResp tmdbSearchResponse
+	if err := json.Unmarshal(body, &tmdbResp); err != nil {
+		return nil, err
+	}
+
+	results := make([]schemas.ExternalMediaResult, 0)
+	for _, item := range tmdbResp.Results {
+		itemType := item.MediaType
+		if itemType == "" {
+			if mediaType != "" {
+				itemType = mediaType
+			} else {
+				itemType = "movie"
+			}
+		}
+
+		if itemType != "movie" && itemType != "tv" {
+			continue
+		}
+		if mediaType != "" && itemType != mediaType {
+			continue
+		}
+
+		title := item.Title
+		origTitle := item.OrigTitle
+		relDate := item.ReleaseDate
+		if itemType == "tv" {
+			title = item.Name
+			origTitle = item.OrigName
+			relDate = item.FirstAirDate
+		}
+
+		year := 0
+		if len(relDate) >= 4 {
+			var y int
+			if _, err := fmt.Sscanf(relDate[:4], "%d", &y); err == nil {
+				year = y
+			}
+		}
+
+		posterURL := ""
+		if item.PosterPath != "" {
+			posterURL = "https://image.tmdb.org/t/p/w500" + item.PosterPath
+		}
+		backdropURL := ""
+		if item.BackdropPath != "" {
+			backdropURL = "https://image.tmdb.org/t/p/w1280" + item.BackdropPath
+		}
+
+		genres := mapGenreIDsToString(item.GenreIDs)
+
+		results = append(results, schemas.ExternalMediaResult{
+			TMDBID:        item.ID,
+			Type:          schemas.MediaType(itemType),
+			Title:         title,
+			OriginalTitle: origTitle,
+			Overview:      item.Overview,
+			PosterURL:     posterURL,
+			BackdropURL:   backdropURL,
+			ReleaseDate:   relDate,
+			Year:          year,
+			Genres:        genres,
+			VoteAverage:   item.VoteAverage,
+		})
+	}
+
+	log.Printf("[TMDB] Em alta na semana (trending) retornou %d resultados", len(results))
 	return results, nil
 }

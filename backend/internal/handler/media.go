@@ -143,7 +143,7 @@ func ImportMediaHandler(c *gin.Context) {
 		input.TMDBID = nil
 	}
 
-	// 1. Se já existir pelo TMDBID, retorna a existente
+	// 1. Se já existir pelo TMDBID, retorna a existente (identificador canônico único)
 	if input.TMDBID != nil && *input.TMDBID > 0 {
 		var existing schemas.MediaItem
 		if err := db.Where("tmdb_id = ?", *input.TMDBID).First(&existing).Error; err == nil {
@@ -155,10 +155,15 @@ func ImportMediaHandler(c *gin.Context) {
 		}
 	}
 
-	// 2. Se já existir por título e tipo, também reaproveita
-	if input.Title != "" {
+	// 2. Se for cadastro manual (sem TMDBID), busca por título, tipo e ano para evitar duplicatas,
+	// mas NUNCA substitui obras distintas com mesmo nome (ex: Pânico 1996 e Pânico 2022).
+	if input.TMDBID == nil && input.Title != "" {
 		var existingByTitle schemas.MediaItem
-		if err := db.Where("LOWER(title) = ? AND type = ?", strings.ToLower(input.Title), input.Type).First(&existingByTitle).Error; err == nil {
+		query := db.Where("LOWER(title) = ? AND type = ?", strings.ToLower(input.Title), input.Type)
+		if input.Year > 0 {
+			query = query.Where("year = ?", input.Year)
+		}
+		if err := query.First(&existingByTitle).Error; err == nil {
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Mídia já cadastrada",
 				"media":   existingByTitle,
@@ -213,13 +218,19 @@ func ImportMediaHandler(c *gin.Context) {
 			}
 		}
 
-		var existingByTitle schemas.MediaItem
-		if findErr := db.Where("LOWER(title) = ? AND type = ?", strings.ToLower(input.Title), input.Type).First(&existingByTitle).Error; findErr == nil {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Mídia já cadastrada",
-				"media":   existingByTitle,
-			})
-			return
+		if input.TMDBID == nil && input.Title != "" {
+			var existingByTitle schemas.MediaItem
+			query := db.Where("LOWER(title) = ? AND type = ?", strings.ToLower(input.Title), input.Type)
+			if input.Year > 0 {
+				query = query.Where("year = ?", input.Year)
+			}
+			if findErr := query.First(&existingByTitle).Error; findErr == nil {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "Mídia já cadastrada",
+					"media":   existingByTitle,
+				})
+				return
+			}
 		}
 
 		log.Printf("[MEDIA_IMPORT_ERROR] Erro ao cadastrar mídia: %v (input: %+v)", err, input)

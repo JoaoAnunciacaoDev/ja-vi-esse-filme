@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getPublishedPatchNotes } from '@/api/patchNotes'
+import { formatDateDDMMYYYY } from '@/utils/date'
 import type { PatchNote } from '@/types/patchNotes'
 import { X, Sparkles, Rocket, Zap, Wrench, Calendar, Tag } from 'lucide-react'
 
@@ -103,11 +104,7 @@ export function PatchNotesModal({ onClose }: PatchNotesModalProps) {
                     {note.published_at && (
                       <span className="text-[11px] text-slate-500 flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {new Date(note.published_at).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                        {formatDateDDMMYYYY(note.published_at)}
                       </span>
                     )}
                   </div>

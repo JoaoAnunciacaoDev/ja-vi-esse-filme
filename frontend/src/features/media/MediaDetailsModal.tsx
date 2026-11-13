@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { MediaItem, ExternalMediaResult, WatchStatus } from '@/types/media'
+import { formatDateDDMMYYYY } from '@/utils/date'
 import {
   X,
   Film,
@@ -283,7 +284,7 @@ export function MediaDetailsModal({
           )}
           {'release_date' in media && media.release_date && (
             <div className="text-xs text-slate-500">
-              Lançamento oficial: {media.release_date}
+              Lançamento oficial: {formatDateDDMMYYYY(media.release_date)}
             </div>
           )}
         </div>
