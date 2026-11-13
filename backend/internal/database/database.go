@@ -49,6 +49,7 @@ func SyncSchemas(db *gorm.DB) error {
 		&schemas.PatchNote{},
 		&schemas.ActivityLike{},
 		&schemas.ActivityComment{},
+		&schemas.SeriesEvaluation{},
 	}
 
 	hasMediaItems := db.Migrator().HasTable("media_items")

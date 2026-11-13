@@ -18,6 +18,7 @@ import {
   XCircle,
   Loader2,
   ChevronDown,
+  Calculator,
 } from 'lucide-react'
 
 interface MediaDetailsModalProps {
@@ -30,6 +31,7 @@ interface MediaDetailsModalProps {
   onUpdateStatus?: (media: MediaItem | ExternalMediaResult, status: WatchStatus) => void
   onToggleFavorite?: (media: MediaItem | ExternalMediaResult) => void
   onLogWatch?: (media: MediaItem | ExternalMediaResult) => void
+  onOpenSeriesEvaluation?: (media: MediaItem | ExternalMediaResult) => void
 }
 
 const STATUS_CONFIG: Record<
@@ -87,6 +89,7 @@ export function MediaDetailsModal({
   onUpdateStatus,
   onToggleFavorite,
   onLogWatch,
+  onOpenSeriesEvaluation,
 }: MediaDetailsModalProps) {
   const [imageError, setImageError] = useState(false)
   const [backdropError, setBackdropError] = useState(false)
@@ -252,6 +255,33 @@ export function MediaDetailsModal({
                   {genre}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* Banner de Avaliação Hierárquica para Séries */}
+          {!isMovie && onOpenSeriesEvaluation && (
+            <div className="p-3.5 bg-gradient-to-r from-cyan-950/40 via-slate-900 to-slate-900 border border-cyan-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Calculator className="w-4 h-4 text-cyan-400" />
+                  Sistema de Avaliações de Série
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  Atribua notas por episódio e temporada com cálculo automático da média geral.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onOpenSeriesEvaluation(media)
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition cursor-pointer shrink-0 shadow-md shadow-cyan-500/20 flex items-center justify-center gap-1.5"
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                <span>Avaliar Episódios & Temporadas</span>
+              </button>
             </div>
           )}
 

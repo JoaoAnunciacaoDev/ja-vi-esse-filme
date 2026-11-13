@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchlistApi } from '@/api/watchlist'
 import { MediaDetailsModal } from '@/features/media/MediaDetailsModal'
+import { SeriesEvaluationModal } from '@/features/series/SeriesEvaluationModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import type { WatchStatus, MediaItem, UserMedia } from '@/types/media'
+import type { WatchStatus, MediaItem, UserMedia, MediaType } from '@/types/media'
 import {
   Bookmark,
   Tv,
+  Film,
   Check,
   Trash2,
   Heart,
@@ -16,6 +18,10 @@ import {
   Pause,
   XCircle,
   Sparkles,
+  Search,
+  X,
+  Layers,
+  LayoutGrid,
 } from 'lucide-react'
 
 interface WatchlistPageProps {
@@ -23,12 +29,17 @@ interface WatchlistPageProps {
   onNavigateToCatalog: () => void
 }
 
+type TabType = WatchStatus | 'favorites' | 'all'
+
 export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: WatchlistPageProps) {
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<WatchStatus | 'favorites'>('watching')
+  const [activeTab, setActiveTab] = useState<TabType>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | MediaType>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [selectedUserMedia, setSelectedUserMedia] = useState<UserMedia | null>(null)
   const [itemToDelete, setItemToDelete] = useState<UserMedia | null>(null)
+  const [seriesToEvaluate, setSeriesToEvaluate] = useState<MediaItem | null>(null)
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -75,19 +86,49 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
     },
   })
 
-  const allItems = data?.items || []
+  const allItems = useMemo(() => data?.items || [], [data?.items])
 
-  const filteredItems = allItems.filter((item) => {
-    if (activeTab === 'favorites') return item.favorite
-    return item.status === activeTab
-  })
+  // Filtragem combinada: Status/Aba + Tipo (Filme/Série) + Busca
+  const filteredItems = useMemo(() => {
+    return allItems.filter((item) => {
+      // 1. Aba de Status
+      if (activeTab === 'favorites') {
+        if (!item.favorite) return false
+      } else if (activeTab !== 'all') {
+        if (item.status !== activeTab) return false
+      }
 
-  const watchingCount = allItems.filter((i) => i.status === 'watching').length
-  const planCount = allItems.filter((i) => i.status === 'plan_to_watch').length
-  const completedCount = allItems.filter((i) => i.status === 'completed').length
-  const pausedCount = allItems.filter((i) => i.status === 'paused').length
-  const droppedCount = allItems.filter((i) => i.status === 'dropped').length
-  const favCount = allItems.filter((i) => i.favorite).length
+      // 2. Filtro de Tipo (filme/série/todos)
+      if (typeFilter !== 'all' && item.media?.type !== typeFilter) {
+        return false
+      }
+
+      // 3. Busca por texto (título, diretor, gênero)
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim()
+        const titleMatch = item.media?.title?.toLowerCase().includes(query)
+        const directorMatch = item.media?.director?.toLowerCase().includes(query)
+        const genreMatch = item.media?.genres?.toLowerCase().includes(query)
+        if (!titleMatch && !directorMatch && !genreMatch) return false
+      }
+
+      return true
+    })
+  }, [allItems, activeTab, typeFilter, searchQuery])
+
+  // Contadores por status respeitando o tipo selecionado
+  const typeScopedItems = useMemo(() => {
+    if (typeFilter === 'all') return allItems
+    return allItems.filter((i) => i.media?.type === typeFilter)
+  }, [allItems, typeFilter])
+
+  const totalCount = typeScopedItems.length
+  const watchingCount = typeScopedItems.filter((i) => i.status === 'watching').length
+  const planCount = typeScopedItems.filter((i) => i.status === 'plan_to_watch').length
+  const completedCount = typeScopedItems.filter((i) => i.status === 'completed').length
+  const pausedCount = typeScopedItems.filter((i) => i.status === 'paused').length
+  const droppedCount = typeScopedItems.filter((i) => i.status === 'dropped').length
+  const favCount = typeScopedItems.filter((i) => i.favorite).length
 
   return (
     <div className="space-y-6">
@@ -124,6 +165,18 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
             onOpenLogModal(selectedUserMedia.media)
           }
         }}
+        onOpenSeriesEvaluation={(media) => {
+          if ('id' in media && media.id) {
+            setSeriesToEvaluate(media as MediaItem)
+          }
+        }}
+      />
+
+      {/* Modal de Avaliação Hierárquica de Séries */}
+      <SeriesEvaluationModal
+        isOpen={Boolean(seriesToEvaluate)}
+        onClose={() => setSeriesToEvaluate(null)}
+        media={seriesToEvaluate || undefined}
       />
 
       {/* Modal Reutilizável de Confirmação para Remoção */}
@@ -165,11 +218,87 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
         </button>
       </div>
 
-      {/* Abas de Status com todas as categorias solicitadas */}
+      {/* Barra de Filtros e Busca da Videoteca */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+        {/* Barra de Busca interna */}
+        <div className="md:col-span-7 relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por título, diretor ou gênero na sua videoteca..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-9 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500/60 transition"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Filtro de Tipo: Todos / Filmes / Séries */}
+        <div className="md:col-span-5 flex items-center justify-start md:justify-end gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          <button
+            onClick={() => setTypeFilter('all')}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              typeFilter === 'all'
+                ? 'bg-rose-500 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Todos</span>
+          </button>
+          <button
+            onClick={() => setTypeFilter('movie')}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              typeFilter === 'movie'
+                ? 'bg-rose-500 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Film className="w-3.5 h-3.5" />
+            <span>Filmes</span>
+          </button>
+          <button
+            onClick={() => setTypeFilter('tv')}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              typeFilter === 'tv'
+                ? 'bg-rose-500 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span>Séries</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Abas de Status com "Todos" e todas as categorias solicitadas */}
       <div className="flex bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-semibold overflow-x-auto scrollbar-none gap-1">
+        {/* Aba Todos */}
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`flex-1 min-w-[95px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeTab === 'all'
+              ? 'bg-slate-700 text-white shadow-md font-bold'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span>Todos</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'all' ? 'bg-white/20' : 'bg-slate-800'}`}>
+            {totalCount}
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab('watching')}
-          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[105px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'watching'
               ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -184,7 +313,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
         <button
           onClick={() => setActiveTab('plan_to_watch')}
-          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[105px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'plan_to_watch'
               ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -199,7 +328,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
         <button
           onClick={() => setActiveTab('completed')}
-          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[105px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'completed'
               ? 'bg-rose-500 text-white shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -214,7 +343,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
         <button
           onClick={() => setActiveTab('paused')}
-          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[105px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'paused'
               ? 'bg-yellow-500 text-slate-950 shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -229,7 +358,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
         <button
           onClick={() => setActiveTab('dropped')}
-          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[105px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'dropped'
               ? 'bg-slate-700 text-white shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -244,7 +373,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
         <button
           onClick={() => setActiveTab('favorites')}
-          className={`flex-1 min-w-[110px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-w-[105px] py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
             activeTab === 'favorites'
               ? 'bg-rose-600 text-white shadow-md font-bold'
               : 'text-slate-400 hover:text-white'
@@ -295,6 +424,12 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                     </div>
                   )}
 
+                  {/* Badge Tipo (Filme ou Série) */}
+                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider backdrop-blur-md bg-slate-950/70 border border-slate-700/50 text-slate-300 flex items-center gap-1">
+                    {isMovie ? <Film className="w-2.5 h-2.5 text-rose-400" /> : <Tv className="w-2.5 h-2.5 text-cyan-400" />}
+                    <span>{isMovie ? 'Filme' : 'Série'}</span>
+                  </div>
+
                   {/* Favorito */}
                   <button
                     onClick={(e) => {
@@ -325,22 +460,40 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                     <h3 className="font-bold text-white text-xs line-clamp-1 group-hover:text-rose-400 transition" title={media.title}>
                       {media.title}
                     </h3>
-                    {media.year ? (
-                      <span className="text-[11px] text-slate-500">{media.year}</span>
-                    ) : null}
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      {media.year ? <span>{media.year}</span> : null}
+                      {media.genres ? (
+                        <>
+                          <span>•</span>
+                          <span className="line-clamp-1">{media.genres.split(',')[0]}</span>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
 
-                  {/* Ações Alinhadas Verticalmente: Avaliar (topo) e Status/Lixeira (abaixo) */}
+                  {/* Ações Alinhadas Verticalmente */}
                   <div className="space-y-1.5 pt-2 border-t border-slate-800/80 flex flex-col">
-                    {/* Botão Registrar Sessão com Detalhes */}
+                    {/* Botão Registrar Diário */}
                     <button
                       onClick={() => onOpenLogModal(media)}
                       title="Registrar experiência detalhada com nota e resenha"
                       className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
                     >
                       <Plus className="w-3 h-3 stroke-[2.5]" />
-                      <span>Avaliar</span>
+                      <span>Avaliar no Diário</span>
                     </button>
+
+                    {/* Para Séries: Botão dedicado de Avaliação Hierárquica */}
+                    {!isMovie && (
+                      <button
+                        onClick={() => setSeriesToEvaluate(media)}
+                        title="Avaliar temporadas e episódios desta série com médias automáticas"
+                        className="w-full inline-flex items-center justify-center gap-1.5 py-1 rounded-xl text-[10px] font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer"
+                      >
+                        <Layers className="w-3 h-3 text-cyan-400" />
+                        <span>Episódios & Temporadas</span>
+                      </button>
+                    )}
 
                     <div className="flex items-center gap-1">
                       <select
@@ -381,18 +534,30 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
         <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-10 text-center space-y-4">
           <Bookmark className="w-12 h-12 text-slate-600 mx-auto" />
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-white">Nenhum título nesta categoria</h3>
+            <h3 className="text-sm font-bold text-white">Nenhum título encontrado</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Explore o catálogo para encontrar filmes e séries e organize o que está assistindo ou planeja ver!
+              {searchQuery
+                ? `Nenhum resultado para "${searchQuery}". Tente outros termos de busca.`
+                : 'Explore o catálogo para encontrar filmes e séries e organize sua videoteca!'}
             </p>
           </div>
-          <button
-            onClick={onNavigateToCatalog}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer shadow-md shadow-rose-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Explorar catálogo</span>
-          </button>
+          {searchQuery ? (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>Limpar busca</span>
+            </button>
+          ) : (
+            <button
+              onClick={onNavigateToCatalog}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 transition cursor-pointer shadow-md shadow-rose-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Explorar catálogo</span>
+            </button>
+          )}
         </div>
       )}
     </div>

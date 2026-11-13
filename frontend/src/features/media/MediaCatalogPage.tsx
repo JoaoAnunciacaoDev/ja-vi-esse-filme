@@ -4,6 +4,7 @@ import { mediaApi } from '@/api/media'
 import { watchlistApi } from '@/api/watchlist'
 import { MediaCard } from './MediaCard'
 import { MediaDetailsModal } from './MediaDetailsModal'
+import { SeriesEvaluationModal } from '@/features/series/SeriesEvaluationModal'
 import type { MediaItem, ExternalMediaResult, WatchStatus } from '@/types/media'
 import { Search, Film, Tv, Sparkles, Plus, Loader2 } from 'lucide-react'
 
@@ -20,6 +21,44 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
   const [selectedMediaForDetails, setSelectedMediaForDetails] = useState<
     MediaItem | ExternalMediaResult | null
   >(null)
+  const [seriesToEvaluate, setSeriesToEvaluate] = useState<MediaItem | null>(null)
+
+  const handleOpenSeriesEvaluation = async (item: MediaItem | ExternalMediaResult) => {
+    let mediaItem: MediaItem | null = null
+    if ('id' in item && typeof item.id === 'string' && item.id.length > 0) {
+      mediaItem = item as MediaItem
+    } else {
+      try {
+        const tmdbIdNum =
+          'tmdb_id' in item && typeof item.tmdb_id === 'number' && item.tmdb_id > 0
+            ? item.tmdb_id
+            : undefined
+        const importRes = await mediaApi.import({
+          tmdb_id: tmdbIdNum,
+          type: item.type || 'tv',
+          title: item.title,
+          original_title: item.original_title || item.title,
+          overview: item.overview || '',
+          poster_url: item.poster_url || '',
+          backdrop_url: item.backdrop_url || '',
+          release_date: item.release_date || '',
+          year: item.year || 0,
+          genres: item.genres || '',
+        })
+        if (importRes.media) {
+          mediaItem = importRes.media
+        }
+      } catch (err: any) {
+        setToastMsg('Erro ao carregar dados da série: ' + (err?.message || ''))
+        setTimeout(() => setToastMsg(null), 3000)
+        return
+      }
+    }
+
+    if (mediaItem) {
+      setSeriesToEvaluate(mediaItem)
+    }
+  }
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -234,6 +273,14 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
         onUpdateStatus={(m, s) => updateStatusMutation.mutate({ item: m, status: s })}
         onToggleFavorite={(m) => toggleFavoriteMutation.mutate(m)}
         onLogWatch={(m) => onOpenLogModal(m)}
+        onOpenSeriesEvaluation={(m) => handleOpenSeriesEvaluation(m)}
+      />
+
+      {/* Modal de Avaliação Hierárquica de Séries */}
+      <SeriesEvaluationModal
+        isOpen={Boolean(seriesToEvaluate)}
+        onClose={() => setSeriesToEvaluate(null)}
+        media={seriesToEvaluate || undefined}
       />
 
       {/* Hero / Header de Busca */}

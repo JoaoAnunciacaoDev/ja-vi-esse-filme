@@ -87,3 +87,31 @@ export interface MediaReview {
   platform?: string
   created_at: string
 }
+
+export interface EpisodeEvaluationView {
+  episode_number: number
+  episode_title?: string
+  user_rating?: number | null // null se não avaliado; 0 é válido!
+}
+
+export interface SeasonEvaluationView {
+  season_number: number
+  user_rating?: number | null // Nota manual do usuário para a temporada
+  calculated_rating?: number | null // Média calculada dos episódios
+  episodes: EpisodeEvaluationView[]
+}
+
+export interface SeriesHierarchyView {
+  media_id: string
+  user_rating?: number | null // Nota manual do usuário para a série
+  calculated_rating?: number | null // Média calculada das temporadas
+  seasons: SeasonEvaluationView[]
+}
+
+export interface SetSeriesEvaluationInput {
+  media_id: string
+  season_number: number
+  episode_number: number
+  rating: number
+}
+

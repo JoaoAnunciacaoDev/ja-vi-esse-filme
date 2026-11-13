@@ -71,6 +71,16 @@ func initializeRoutes(r *gin.Engine, cfg *config.Config, db *gorm.DB) {
 			watchlist.PATCH("/:id/collection", handler.ToggleMediaInCollectionHandler)
 		}
 
+		// Sistema de Avaliações Hierárquico para Séries (Série, Temporadas e Episódios)
+		seriesEvals := api.Group("/series-evaluations")
+		seriesEvals.Use(middleware.RequireAuth())
+		{
+			seriesEvals.GET("/:media_id", handler.GetSeriesEvaluationHandler)
+			seriesEvals.POST("", handler.SetSeriesEvaluationHandler)
+			seriesEvals.DELETE("/:media_id", handler.DeleteSeriesEvaluationHandler)
+			seriesEvals.GET("/:media_id/season/:season_number", handler.GetSeasonEpisodesHandler)
+		}
+
 		// Diário de Sessões e Avaliações (Watch Logs)
 		watchLogs := api.Group("/watch-logs")
 		watchLogs.Use(middleware.RequireAuth())
