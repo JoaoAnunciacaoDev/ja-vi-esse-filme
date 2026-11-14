@@ -55,7 +55,7 @@ type WebPushPayload struct {
 // NewTestNotificationPayload constrói o payload da notificação push de teste.
 func NewTestNotificationPayload(displayName string) WebPushPayload {
 	return WebPushPayload{
-		Title: "Silverfish 📖",
+		Title: "Já Vi Esse Filme 🎬🍿",
 		Body:  "Olá, " + displayName + "! Suas notificações push estão funcionando perfeitamente.",
 		Icon:  "/favicon.svg",
 		Badge: "/favicon.svg",

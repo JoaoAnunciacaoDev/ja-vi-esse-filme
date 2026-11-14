@@ -24,7 +24,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w" -o /app/server 
 FROM alpine:3.21
 
 # Utilitários de execução:
-# - ca-certificates: requisições HTTPS externas (Google Books / Open Library)
+# - ca-certificates: requisições HTTPS externas (TMDB API)
 # - tzdata: suporte a fusos horários configurados pelos usuários
 # - curl: utilizado no health check
 RUN apk add --no-cache ca-certificates tzdata curl
@@ -47,7 +47,7 @@ ENV PORT=8080 \
     ENV=production \
     GIN_MODE=release \
     DB_DRIVER=sqlite \
-    DB_SOURCE=/app/data/silverfish.db
+    DB_SOURCE=/app/data/javiessefilme.db
 
 EXPOSE 8080
 

@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: silverfish-backend
+    container_name: javiessefilme-backend
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -12,10 +12,10 @@ services:
       - ENV=production
       - GIN_MODE=release
       - DB_DRIVER=postgres
-      - DB_SOURCE=postgres://silverfish:silverfish_password@postgres:5432/silverfish_db?sslmode=disable
-      - SESSION_SECRET=silverfish_super_secure_production_secret_key_32bytes_min
+      - DB_SOURCE=postgres://javiessefilme:javiessefilme_password@postgres:5432/javiessefilme_db?sslmode=disable
+      - SESSION_SECRET=javiessefilme_production_secret_key_32bytes_min
       - FRONTEND_URL=http://localhost:5173
-      - GOOGLE_BOOKS_API_KEY=
+      - TMDB_API_KEY=
     depends_on:
       postgres:
         condition: service_healthy
@@ -24,18 +24,18 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: silverfish-postgres
+    container_name: javiessefilme-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: silverfish
-      POSTGRES_PASSWORD: silverfish_password
-      POSTGRES_DB: silverfish_db
+      POSTGRES_USER: javiessefilme
+      POSTGRES_PASSWORD: javiessefilme_password
+      POSTGRES_DB: javiessefilme_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U silverfish -d silverfish_db"]
+      test: ["CMD-SHELL", "pg_isready -U javiessefilme -d javiessefilme_db"]
       interval: 10s
       timeout: 5s
       retries: 5

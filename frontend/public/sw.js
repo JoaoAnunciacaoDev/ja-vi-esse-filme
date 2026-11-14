@@ -104,7 +104,7 @@ self.addEventListener('notificationclick', (event) => {
           await client.focus()
           const clientPath = new URL(client.url).pathname
           if (clientPath === '/' || clientPath === '/index.html') {
-            client.postMessage({ type: 'SILVERFISH_NAVIGATE', url: rawUrl })
+            client.postMessage({ type: 'JAVIESSEFILME_NAVIGATE', url: rawUrl })
           } else if ('navigate' in client) {
             await client.navigate(targetUrl).catch(() => {})
           }
