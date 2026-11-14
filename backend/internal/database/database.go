@@ -52,6 +52,27 @@ func SyncSchemas(db *gorm.DB) error {
 		&schemas.SeriesEvaluation{},
 	}
 
+	// 1. DDLs diretos idempotentes para máxima resiliência (garante tabelas e colunas críticas no Postgres)
+	if db.Dialector.Name() == "postgres" {
+		_ = db.Exec("ALTER TABLE user_media ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT '';").Error
+		_ = db.Exec("CREATE INDEX IF NOT EXISTS idx_user_media_platform ON user_media(platform);").Error
+		_ = db.Exec(`CREATE TABLE IF NOT EXISTS series_evaluations (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			media_id TEXT NOT NULL,
+			season_number INTEGER NOT NULL DEFAULT 0,
+			episode_number INTEGER NOT NULL DEFAULT 0,
+			rating REAL NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			FOREIGN KEY (media_id) REFERENCES media_items(id) ON DELETE CASCADE,
+			UNIQUE(user_id, media_id, season_number, episode_number)
+		);`).Error
+		_ = db.Exec("CREATE INDEX IF NOT EXISTS idx_series_evaluations_user_media ON series_evaluations(user_id, media_id);").Error
+		_ = db.Exec("CREATE INDEX IF NOT EXISTS idx_series_evaluations_lookup ON series_evaluations(user_id, media_id, season_number, episode_number);").Error
+	}
+
 	hasMediaItems := db.Migrator().HasTable("media_items")
 	hasUsers := db.Migrator().HasTable("users")
 
@@ -68,10 +89,19 @@ func SyncSchemas(db *gorm.DB) error {
 			}
 		}
 		log.Println("[SyncSchemas] Tabelas e schemas inicializados com sucesso!")
-	} else if db.Dialector.Name() == "sqlite" {
-		for _, m := range models {
-			if err := db.AutoMigrate(m); err != nil {
-				log.Printf("[AutoMigrate] aviso ao sincronizar %T: %v", m, err)
+	} else {
+		// Sincroniza tabelas críticas adicionadas recentemente caso não existam
+		if !db.Migrator().HasTable("series_evaluations") {
+			_ = db.AutoMigrate(&schemas.SeriesEvaluation{})
+		}
+		if !db.Migrator().HasColumn(&schemas.UserMedia{}, "platform") {
+			_ = db.AutoMigrate(&schemas.UserMedia{})
+		}
+		if db.Dialector.Name() == "sqlite" {
+			for _, m := range models {
+				if err := db.AutoMigrate(m); err != nil {
+					log.Printf("[AutoMigrate] aviso ao sincronizar %T: %v", m, err)
+				}
 			}
 		}
 	}

@@ -20,9 +20,7 @@ import {
   Sparkles,
   Search,
   X,
-  Layers,
   LayoutGrid,
-  Monitor,
 } from 'lucide-react'
 
 interface WatchlistPageProps {
@@ -32,23 +30,10 @@ interface WatchlistPageProps {
 
 type TabType = WatchStatus | 'favorites' | 'all'
 
-const PLATFORMS = [
-  'Todas',
-  'Cinema',
-  'Netflix',
-  'Prime Video',
-  'Max',
-  'Disney+',
-  'Apple TV+',
-  'Globoplay',
-  'Outro',
-] as const
-
 export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: WatchlistPageProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | MediaType>('all')
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('Todas')
   const [searchQuery, setSearchQuery] = useState('')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [selectedUserMedia, setSelectedUserMedia] = useState<UserMedia | null>(null)
@@ -84,18 +69,6 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
     },
   })
 
-  const updatePlatformMutation = useMutation({
-    mutationFn: ({ id, platform }: { id: string; platform: string }) =>
-      watchlistApi.update(id, { platform }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
-      showToast('Plataforma atualizada!')
-    },
-    onError: (err: any) => {
-      showToast(err?.message || 'Erro ao atualizar plataforma')
-    },
-  })
-
   const toggleFavoriteMutation = useMutation({
     mutationFn: (id: string) => watchlistApi.toggleFavorite(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
@@ -114,7 +87,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
   const allItems = useMemo(() => data?.items || [], [data?.items])
 
-  // Filtragem combinada: Status/Aba + Tipo (Filme/Série) + Busca + Plataforma
+  // Filtragem combinada: Status/Aba + Tipo (Filme/Série) + Busca
   const filteredItems = useMemo(() => {
     return allItems.filter((item) => {
       // 1. Aba de Status
@@ -129,22 +102,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
         return false
       }
 
-      // 3. Filtro de Plataforma
-      if (selectedPlatform !== 'Todas') {
-        const itemPlatform = item.platform || ''
-        if (selectedPlatform === 'Outro') {
-          const known = ['Cinema', 'Netflix', 'Prime Video', 'Max', 'Disney+', 'Apple TV+', 'Globoplay']
-          if (!itemPlatform || known.some((k) => k.toLowerCase() === itemPlatform.toLowerCase())) {
-            return false
-          }
-        } else {
-          if (itemPlatform.toLowerCase() !== selectedPlatform.toLowerCase()) {
-            return false
-          }
-        }
-      }
-
-      // 4. Busca por texto (título, diretor, gênero)
+      // 3. Busca por texto (título, diretor, gênero)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
         const titleMatch = item.media?.title?.toLowerCase().includes(query)
@@ -155,7 +113,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
 
       return true
     })
-  }, [allItems, activeTab, typeFilter, selectedPlatform, searchQuery])
+  }, [allItems, activeTab, typeFilter, searchQuery])
 
   // Contadores por status respeitando o tipo selecionado
   const typeScopedItems = useMemo(() => {
@@ -324,30 +282,6 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
             </button>
           </div>
         </div>
-
-        {/* Filtro de Plataforma (Streaming / Cinema) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 text-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
-            <Monitor className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Plataforma:</span>
-          </span>
-          {PLATFORMS.map((plat) => {
-            const isSelected = selectedPlatform === plat
-            return (
-              <button
-                key={plat}
-                onClick={() => setSelectedPlatform(plat)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer shrink-0 border ${
-                  isSelected
-                    ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300 font-bold shadow-sm'
-                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                }`}
-              >
-                {plat}
-              </button>
-            )
-          })}
-        </div>
       </div>
 
       {/* Abas de Status com "Todos" e todas as categorias */}
@@ -514,13 +448,6 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                     <Heart className={`w-3.5 h-3.5 ${item.favorite ? 'fill-rose-500 text-rose-500' : ''}`} />
                   </button>
 
-                  {/* Badge Plataforma */}
-                  {item.platform && (
-                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-bold backdrop-blur-md bg-slate-950/85 border border-cyan-500/30 text-cyan-300">
-                      {item.platform}
-                    </div>
-                  )}
-
                   {/* Progresso de Série */}
                   {!isMovie && (item.current_season > 0 || item.current_episode > 0) && (
                     <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold backdrop-blur-md bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
@@ -530,7 +457,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                 </div>
 
                 {/* Conteúdo */}
-                <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2.5">
                   <div
                     onClick={() => setSelectedUserMedia(item)}
                     className="cursor-pointer space-y-0.5"
@@ -551,31 +478,19 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                   </div>
 
                   {/* Ações Alinhadas Verticalmente */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/80 flex flex-col">
+                  <div className="space-y-2 pt-2 border-t border-slate-800/80 flex flex-col">
                     {/* Botão Registrar Diário */}
                     <button
                       onClick={() => onOpenLogModal(media)}
                       title="Registrar experiência detalhada com nota e resenha"
-                      className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold bg-rose-500 text-white hover:bg-rose-400 active:scale-95 transition cursor-pointer shadow-md shadow-rose-500/20"
                     >
-                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                       <span>Avaliar no Diário</span>
                     </button>
 
-                    {/* Para Séries: Botão dedicado de Avaliação Hierárquica */}
-                    {!isMovie && (
-                      <button
-                        onClick={() => setSeriesToEvaluate(media)}
-                        title="Avaliar temporadas e episódios desta série com médias automáticas"
-                        className="w-full inline-flex items-center justify-center gap-1.5 py-1 rounded-xl text-[10px] font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer"
-                      >
-                        <Layers className="w-3 h-3 text-cyan-400" />
-                        <span>Episódios & Temporadas</span>
-                      </button>
-                    )}
-
                     {/* Seletor de Status com opção de Remoção */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <select
                         value={item.status}
                         onChange={(e) => {
@@ -589,7 +504,7 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                             })
                           }
                         }}
-                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-[11px] font-semibold text-slate-300 focus:outline-none focus:border-rose-500 cursor-pointer"
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-300 focus:outline-none focus:border-rose-500 cursor-pointer"
                       >
                         <option value="watching">Assistindo</option>
                         <option value="plan_to_watch">Quero Ver</option>
@@ -607,34 +522,11 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
                           setItemToDelete(item)
                         }}
                         title="Remover status / desmarcar da videoteca"
-                        className="p-1.5 rounded-xl bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer shrink-0"
+                        className="p-2 rounded-xl bg-slate-800/60 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer shrink-0"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-
-                    {/* Seletor Rápido de Plataforma */}
-                    <select
-                      value={item.platform || ''}
-                      onChange={(e) =>
-                        updatePlatformMutation.mutate({
-                          id: item.id,
-                          platform: e.target.value,
-                        })
-                      }
-                      title="Definir plataforma onde assiste"
-                      className="w-full bg-slate-950 border border-slate-800/80 rounded-xl px-2 py-1 text-[10px] font-semibold text-slate-400 hover:text-slate-300 focus:text-white focus:outline-none focus:border-cyan-500 cursor-pointer"
-                    >
-                      <option value="">Plataforma (não informada)</option>
-                      <option value="Netflix">Netflix</option>
-                      <option value="Prime Video">Prime Video</option>
-                      <option value="Max">Max</option>
-                      <option value="Disney+">Disney+</option>
-                      <option value="Apple TV+">Apple TV+</option>
-                      <option value="Globoplay">Globoplay</option>
-                      <option value="Cinema">Cinema</option>
-                      <option value="Outro">Outro</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -647,21 +539,18 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-white">Nenhum título encontrado</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              {searchQuery || selectedPlatform !== 'Todas'
-                ? 'Nenhum resultado corresponde aos filtros selecionados. Tente ajustar os termos ou plataforma.'
+              {searchQuery
+                ? 'Nenhum resultado corresponde aos termos da busca.'
                 : 'Explore o catálogo para encontrar filmes e séries e organize sua videoteca!'}
             </p>
           </div>
-          {searchQuery || selectedPlatform !== 'Todas' ? (
+          {searchQuery ? (
             <button
-              onClick={() => {
-                setSearchQuery('')
-                setSelectedPlatform('Todas')
-              }}
+              onClick={() => setSearchQuery('')}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
             >
               <X className="w-4 h-4" />
-              <span>Limpar filtros</span>
+              <span>Limpar busca</span>
             </button>
           ) : (
             <button

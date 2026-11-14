@@ -670,13 +670,13 @@ export function LogMediaModal({ isOpen, onClose, initialMedia, initialLog }: Log
           />
         </div>
 
-        {/* Resenha / Avaliação com Abas e Opções de Formatação */}
+        {/* Resenha / Avaliação com Editor Visual WYSIWYG */}
         <RichReviewEditor
           value={review}
           onChange={setReview}
           label="Resenha / O que achou?"
           placeholder="Conte o que achou da experiência, atuações, direção, reviravoltas..."
-          rows={4}
+          minHeight="110px"
         />
 
         {/* Spoiler Toggle */}

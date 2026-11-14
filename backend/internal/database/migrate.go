@@ -75,7 +75,12 @@ func ExecuteEmbeddedMigrationsDirectly(sqlDB *sql.DB) error {
 		}
 
 		if _, err := sqlDB.Exec(sqlContent); err != nil {
-			return fmt.Errorf("falha ao executar migração direta %s: %w", filename, err)
+			errStr := strings.ToLower(err.Error())
+			if strings.Contains(errStr, "duplicate column") || strings.Contains(errStr, "already exists") {
+				log.Printf("[Migrações Diretas] Aviso (já existente) em %s: %v", filename, err)
+			} else {
+				return fmt.Errorf("falha ao executar migração direta %s: %w", filename, err)
+			}
 		}
 		log.Printf("[Migrações Diretas] Aplicado com sucesso: %s", filename)
 	}
@@ -99,14 +104,18 @@ func RunMigrations(dbDriver string, dbSource string, sqlDB *sql.DB) error {
 
 	latest := getLatestEmbeddedMigrationVersion()
 
-	// Fast-path para Postgres serverless: se todas as migrações já estão aplicadas sem dirty state,
-	// evita reexecutar migrações ou conexões extras a cada cold start.
+	// Fast-path para Postgres serverless: se todas as migrações já estão aplicadas sem dirty state
+	// e as tabelas críticas existem, evita reexecutar migrações a cada cold start.
 	if normalizedDriver == "postgres" && latest > 0 {
 		var version int64
 		var dirty bool
 		err := sqlDB.QueryRow("SELECT version, dirty FROM schema_migrations LIMIT 1").Scan(&version, &dirty)
 		if err == nil && !dirty && version >= latest {
-			return nil
+			var hasSeriesEval bool
+			_ = sqlDB.QueryRow("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'series_evaluations')").Scan(&hasSeriesEval)
+			if hasSeriesEval {
+				return nil
+			}
 		}
 	}
 
