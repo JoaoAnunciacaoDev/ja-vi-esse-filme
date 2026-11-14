@@ -5,7 +5,7 @@ import { watchlistApi } from '@/api/watchlist'
 import { MediaCard } from './MediaCard'
 import { MediaDetailsModal } from './MediaDetailsModal'
 import { SeriesEvaluationModal } from '@/features/series/SeriesEvaluationModal'
-import type { MediaItem, ExternalMediaResult, WatchStatus } from '@/types/media'
+import type { MediaItem, ExternalMediaResult, WatchStatus, UserMedia } from '@/types/media'
 import { Search, Film, Tv, Sparkles, Plus, Loader2 } from 'lucide-react'
 
 interface MediaCatalogPageProps {
@@ -156,8 +156,67 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
         status,
       })
     },
+    onMutate: async ({ item, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] })
+      const previousWatchlist = queryClient.getQueryData<{ items: UserMedia[] }>(['watchlist'])
+
+      if (previousWatchlist) {
+        let updatedItems = [...previousWatchlist.items]
+        const mediaId = 'id' in item && item.id ? String(item.id) : ''
+        const tmdbId = 'tmdb_id' in item ? item.tmdb_id : undefined
+
+        const index = updatedItems.findIndex((i) => {
+          if (tmdbId && i.media?.tmdb_id === tmdbId) return true
+          if (mediaId && i.media_id === mediaId) return true
+          return false
+        })
+
+        if (!status) {
+          if (index !== -1) {
+            updatedItems.splice(index, 1)
+          }
+        } else if (index !== -1) {
+          updatedItems[index] = {
+            ...updatedItems[index],
+            status,
+          }
+        } else {
+          const optimisticMedia: MediaItem = {
+            id: mediaId || `temp-${Date.now()}`,
+            tmdb_id: tmdbId,
+            title: item.title,
+            original_title: item.original_title,
+            poster_url: item.poster_url,
+            backdrop_url: item.backdrop_url,
+            overview: item.overview,
+            release_date: item.release_date,
+            year: item.year,
+            type: item.type || 'movie',
+            genres: item.genres,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+          updatedItems.unshift({
+            id: `temp-${Date.now()}`,
+            user_id: '',
+            media_id: optimisticMedia.id,
+            media: optimisticMedia,
+            status,
+            favorite: false,
+            in_collection: true,
+            current_season: 0,
+            current_episode: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+        }
+
+        queryClient.setQueryData(['watchlist'], { items: updatedItems })
+      }
+
+      return { previousWatchlist }
+    },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
       if (!variables.status) {
         setToastMsg(`Status de "${variables.item.title}" removido com sucesso!`)
       } else {
@@ -172,7 +231,10 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       }
       setTimeout(() => setToastMsg(null), 3000)
     },
-    onError: (err: any) => {
+    onError: (err: any, _, context) => {
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(['watchlist'], context.previousWatchlist)
+      }
       console.error('Falha ao atualizar status:', err)
       let message = err?.message || 'Erro ao alterar status.'
       if (err?.status === 401 || err?.message?.includes('401') || err?.message?.includes('não autorizado')) {
@@ -180,6 +242,9 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       }
       setToastMsg(message)
       setTimeout(() => setToastMsg(null), 4000)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
     },
   })
 
@@ -229,8 +294,33 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
         favorite: true,
       })
     },
+    onMutate: async (item) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] })
+      const previousWatchlist = queryClient.getQueryData<{ items: UserMedia[] }>(['watchlist'])
+
+      if (previousWatchlist) {
+        let updatedItems = [...previousWatchlist.items]
+        const mediaId = 'id' in item && item.id ? String(item.id) : ''
+        const tmdbId = 'tmdb_id' in item ? item.tmdb_id : undefined
+
+        const index = updatedItems.findIndex((i) => {
+          if (tmdbId && i.media?.tmdb_id === tmdbId) return true
+          if (mediaId && i.media_id === mediaId) return true
+          return false
+        })
+
+        if (index !== -1) {
+          updatedItems[index] = {
+            ...updatedItems[index],
+            favorite: !updatedItems[index].favorite,
+          }
+        }
+        queryClient.setQueryData(['watchlist'], { items: updatedItems })
+      }
+
+      return { previousWatchlist }
+    },
     onSuccess: (res, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
       const isFavNow = (res as any)?.favorite ?? true
       setToastMsg(
         isFavNow
@@ -239,7 +329,10 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       )
       setTimeout(() => setToastMsg(null), 3000)
     },
-    onError: (err: any) => {
+    onError: (err: any, _, context) => {
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(['watchlist'], context.previousWatchlist)
+      }
       console.error('Falha ao favoritar:', err)
       let message = err?.message || 'Erro ao favoritar.'
       if (err?.status === 401 || err?.message?.includes('401') || err?.message?.includes('não autorizado')) {
@@ -247,6 +340,9 @@ export function MediaCatalogPage({ onOpenLogModal }: MediaCatalogPageProps) {
       }
       setToastMsg(message)
       setTimeout(() => setToastMsg(null), 4000)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
     },
   })
 

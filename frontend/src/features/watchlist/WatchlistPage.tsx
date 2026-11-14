@@ -53,8 +53,18 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: WatchStatus }) =>
       watchlistApi.update(id, { status }),
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] })
+      const previousWatchlist = queryClient.getQueryData<{ items: UserMedia[] }>(['watchlist'])
+      if (previousWatchlist) {
+        const updated = previousWatchlist.items.map((i) =>
+          i.id === id ? { ...i, status } : i
+        )
+        queryClient.setQueryData(['watchlist'], { items: updated })
+      }
+      return { previousWatchlist }
+    },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
       const statusLabels: Record<WatchStatus, string> = {
         plan_to_watch: 'Quero Ver',
         watching: 'Assistindo',
@@ -64,24 +74,63 @@ export function WatchlistPage({ onOpenLogModal, onNavigateToCatalog }: Watchlist
       }
       showToast(`Movido para "${statusLabels[variables.status]}"!`)
     },
-    onError: (err: any) => {
+    onError: (err: any, _, context) => {
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(['watchlist'], context.previousWatchlist)
+      }
       showToast(err?.message || 'Erro ao alterar status')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
     },
   })
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: (id: string) => watchlistApi.toggleFavorite(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] })
+      const previousWatchlist = queryClient.getQueryData<{ items: UserMedia[] }>(['watchlist'])
+      if (previousWatchlist) {
+        const updated = previousWatchlist.items.map((i) =>
+          i.id === id ? { ...i, favorite: !i.favorite } : i
+        )
+        queryClient.setQueryData(['watchlist'], { items: updated })
+      }
+      return { previousWatchlist }
+    },
+    onError: (err: any, _, context) => {
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(['watchlist'], context.previousWatchlist)
+      }
+      showToast(err?.message || 'Erro ao atualizar favorito')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
+    },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => watchlistApi.delete(id),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] })
+      const previousWatchlist = queryClient.getQueryData<{ items: UserMedia[] }>(['watchlist'])
+      if (previousWatchlist) {
+        const updated = previousWatchlist.items.filter((i) => i.id !== id)
+        queryClient.setQueryData(['watchlist'], { items: updated })
+      }
+      return { previousWatchlist }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
       showToast('Status e título removidos da sua videoteca!')
     },
-    onError: (err: any) => {
+    onError: (err: any, _, context) => {
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(['watchlist'], context.previousWatchlist)
+      }
       showToast(err?.message || 'Erro ao remover título')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] })
     },
   })
 

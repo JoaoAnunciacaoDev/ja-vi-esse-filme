@@ -41,21 +41,6 @@ func ListUserMediaHandler(c *gin.Context) {
 		return
 	}
 
-	// Enriquece mídias sem plataforma definida buscando o registro mais recente no diário
-	for i := range list {
-		if list[i].Platform == "" {
-			var logPlatform string
-			if err := db.Model(&schemas.WatchLog{}).
-				Where("user_id = ? AND media_id = ? AND platform != ''", userStr, list[i].MediaID).
-				Order("watched_at DESC, created_at DESC").
-				Select("platform").
-				Limit(1).
-				Scan(&logPlatform).Error; err == nil && logPlatform != "" {
-				list[i].Platform = logPlatform
-			}
-		}
-	}
-
 	c.JSON(http.StatusOK, gin.H{"items": list})
 }
 
