@@ -24,6 +24,7 @@ import type {
 import { useAuth } from '@/features/auth/AuthContext'
 import { UserProfileModal } from './UserProfileModal'
 import { triggerConfetti } from '@/components/ui/confetti'
+import { FormattedReview } from '@/components/ui/FormattedReview'
 import {
   Flame,
   Trophy,
@@ -472,7 +473,11 @@ export function SocialPage() {
                               <span className="text-slate-300 font-normal">"{item.media?.title || meta.media_title || meta.book_title || 'Título'}"</span>
                             </div>
                             {(meta.review || meta.comment) && (
-                              <p className="text-xs text-slate-300 italic line-clamp-2">"{meta.review || meta.comment}"</p>
+                              <FormattedReview
+                                content={meta.review || meta.comment}
+                                clampLines={2}
+                                className="text-xs text-slate-300 italic"
+                              />
                             )}
                           </div>
                         )}

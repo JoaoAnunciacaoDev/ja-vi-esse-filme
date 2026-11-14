@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchLogsApi } from '@/api/watchLogs'
 import { mediaApi } from '@/api/media'
 import { RatingStarsInput } from '@/components/ui/RatingStarsInput'
+import { RichReviewEditor } from '@/components/ui/RichReviewEditor'
 import { formatDateDDMMYYYY, extractDateOnly, getLocalTodayDateString } from '@/utils/date'
 import type { MediaItem, ExternalMediaResult, WatchLog } from '@/types/media'
 import { triggerConfetti } from '@/components/ui/confetti'
@@ -669,17 +670,14 @@ export function LogMediaModal({ isOpen, onClose, initialMedia, initialLog }: Log
           />
         </div>
 
-        {/* Resenha / Texto */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300">Resenha / O que achou?</label>
-          <textarea
-            value={review}
-            onChange={(e) => setReview(e.target.value)}
-            rows={3}
-            placeholder="Conte o que achou da experiência, atuações, direção, reviravoltas..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 transition resize-none"
-          />
-        </div>
+        {/* Resenha / Avaliação com Abas e Opções de Formatação */}
+        <RichReviewEditor
+          value={review}
+          onChange={setReview}
+          label="Resenha / O que achou?"
+          placeholder="Conte o que achou da experiência, atuações, direção, reviravoltas..."
+          rows={4}
+        />
 
         {/* Spoiler Toggle */}
         {review.trim().length > 0 && (

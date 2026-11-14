@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { watchLogsApi } from '@/api/watchLogs'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { formatDateDDMMYYYY } from '@/utils/date'
+import { FormattedReview, stripFormatting } from '@/components/ui/FormattedReview'
 import type { WatchLog, MediaItem } from '@/types/media'
 import { Film, Tv, Star, Calendar, Plus, Trash2, Repeat, Loader2, Sparkles, AlertTriangle, Pencil } from 'lucide-react'
 
@@ -131,7 +132,7 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
           {logs.map((log: WatchLog) => {
             const media = log.media
             const isMovie = log.media_type === 'movie'
-            const isLongReview = log.review && log.review.length > 100
+            const isLongReview = log.review && stripFormatting(log.review).length > 100
             const isExpanded = expandedReviews[log.id]
 
             return (
@@ -213,11 +214,11 @@ export function DiaryPage({ onOpenLogModal, onNavigateToCatalog }: DiaryPageProp
                             <span>Contém Spoilers</span>
                           </div>
                         )}
-                        <p className="text-xs text-slate-300 leading-relaxed break-words whitespace-pre-wrap">
-                          {isLongReview && !isExpanded
-                            ? `${log.review.slice(0, 100)}...`
-                            : log.review}
-                        </p>
+                        <FormattedReview
+                          content={log.review}
+                          clampLines={isLongReview && !isExpanded ? 3 : undefined}
+                          className="text-xs text-slate-300 leading-relaxed break-words"
+                        />
                         {isLongReview && (
                           <button
                             onClick={() => toggleExpand(log.id)}
